@@ -55,14 +55,33 @@
             margin-bottom: 20px;
             display: block;
         }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="result">
-            <span class="icon">🔄</span>
-            <h1 class="loading">Verifying your email...</h1>
-            <p>Please wait while we verify your account.</p>
+            <span class="icon">📧</span>
+            <h1 class="loading">Email Verification</h1>
+            <p>Click the button below to verify your email address.</p>
+            <button id="verifyBtn" class="btn" onclick="verifyEmail()">Verify Email</button>
         </div>
     </div>
     
@@ -71,9 +90,30 @@
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
         
-        if (token) {
-            // Call API to verify
-            fetch(`/auth/verify?token=${token}`)
+        function verifyEmail() {
+            if (!token) {
+                document.getElementById('result').innerHTML = `
+                    <span class="icon">⚠️</span>
+                    <h1 class="error">No Token Found</h1>
+                    <p>Please check your email for the correct verification link.</p>
+                `;
+                return;
+            }
+            
+            // Disable button and show loading
+            const btn = document.getElementById('verifyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+            
+            // Show loading state
+            document.getElementById('result').innerHTML = `
+                <span class="icon">🔄</span>
+                <h1 class="loading">Verifying your email...</h1>
+                <p>Please wait while we verify your account.</p>
+            `;
+            
+            // Call API to verify (gọi sang api.verveo.click)
+            fetch(`https://api.verveo.click/auth/verify?token=${token}`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('result').innerHTML = `
@@ -89,12 +129,6 @@
                         <p>Invalid or expired token. Please try again.</p>
                     `;
                 });
-        } else {
-            document.getElementById('result').innerHTML = `
-                <span class="icon">⚠️</span>
-                <h1 class="error">No Token Found</h1>
-                <p>Please check your email for the correct verification link.</p>
-            `;
         }
     </script>
 </body>

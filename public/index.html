@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Email Verification - Verveo</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center; 
+            padding: 0;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 90%;
+        }
+        .success { 
+            color: #4CAF50; 
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .error { 
+            color: #f44336; 
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .loading {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0;
+            font-weight: 300;
+        }
+        p {
+            font-size: 1.2em;
+            margin: 0;
+            opacity: 0.8;
+            line-height: 1.5;
+            color: #666;
+        }
+        .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="result">
+            <span class="icon">🔄</span>
+            <h1 class="loading">Verifying your email...</h1>
+            <p>Please wait while we verify your account.</p>
+        </div>
+    </div>
+    
+    <script>
+        // Get token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        if (token) {
+            // Call API to verify
+            fetch(`/auth/verify?token=${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').innerHTML = `
+                        <span class="icon">✅</span>
+                        <h1 class="success">Email Verified Successfully!</h1>
+                        <p>Your account has been verified. You can now login to Verveo.</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `
+                        <span class="icon">❌</span>
+                        <h1 class="error">Verification Failed</h1>
+                        <p>Invalid or expired token. Please try again.</p>
+                    `;
+                });
+        } else {
+            document.getElementById('result').innerHTML = `
+                <span class="icon">⚠️</span>
+                <h1 class="error">No Token Found</h1>
+                <p>Please check your email for the correct verification link.</p>
+            `;
+        }
+    </script>
+</body>
+</html>

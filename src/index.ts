@@ -154,10 +154,8 @@ app.post('/todos', authenticateToken, async (req: Request, res: Response, next: 
     
     const savedTodo = await createTodo(todoData);
     
-    res.json({
-      ...aiResult,
-      savedTodo: savedTodo
-    });
+    // Return only the saved todo object (no AI metadata)
+    res.json(savedTodo);
   } catch (err) {
     next(err);
   }

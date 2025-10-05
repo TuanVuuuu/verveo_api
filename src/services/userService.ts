@@ -13,7 +13,7 @@ export const getUserTodos = async (userId: number): Promise<Todo[]> => {
 export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
   const [result] = await pool.execute(
     'INSERT INTO todos (user_id, title, due, labels, priority) VALUES (?, ?, ?, ?, ?)',
-    [todoData.user_id, todoData.title, todoData.due, JSON.stringify(todoData.labels), todoData.priority]
+    [todoData.user_id, todoData.title, todoData.due, todoData.labels ? JSON.stringify(todoData.labels) : null, todoData.priority]
   );
   
   const todoId = (result as any).insertId;

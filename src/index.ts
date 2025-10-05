@@ -141,7 +141,7 @@ app.post('/todos', authenticateToken, async (req: Request, res: Response, next: 
       user_id: userId,
       title: aiResult.title,
       due: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
-      labels: aiResult.labels ? JSON.stringify(aiResult.labels) : null,
+      labels: aiResult.labels || null,
       priority: aiResult.priority || 'medium'
     };
     

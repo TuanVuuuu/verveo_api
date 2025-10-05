@@ -3,13 +3,36 @@ import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { Todo, CreateTodoData } from '../models/Todo.js';
 
-export const getUserTodos = async (userId: number): Promise<Todo[]> => {
-  const [todos] = await pool.execute(
-    'SELECT * FROM todos WHERE user_id = ? ORDER BY created_at DESC',
-    [userId]
-  );
-  
-  // Parse JSON fields
+export type ListTodosOptions = {
+  startFrom?: Date;
+  startTo?: Date;
+  page?: number;
+  size?: number;
+  sort?: 'start_time_asc' | 'start_time_desc';
+};
+
+export const getUserTodos = async (userId: number, opts: ListTodosOptions = {}): Promise<Todo[]> => {
+  const page = Math.max(1, opts.page ?? 1);
+  const size = Math.min(100, Math.max(1, opts.size ?? 20));
+  const offset = (page - 1) * size;
+  const sortClause = (opts.sort ?? 'start_time_asc') === 'start_time_desc' ? 'DESC' : 'ASC';
+
+  const where: string[] = ['user_id = ?'];
+  const values: any[] = [userId];
+  if (opts.startFrom) {
+    where.push('start_time >= ?');
+    values.push(opts.startFrom);
+  }
+  if (opts.startTo) {
+    where.push('start_time <= ?');
+    values.push(opts.startTo);
+  }
+
+  const sql = `SELECT * FROM todos WHERE ${where.join(' AND ')} ORDER BY start_time ${sortClause}, id ${sortClause} LIMIT ? OFFSET ?`;
+  values.push(size, offset);
+
+  const [todos] = await pool.execute(sql, values);
+
   return (todos as any[]).map(todo => ({
     ...todo,
     labels: todo.labels ? JSON.parse(todo.labels) : null

@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticateToken } from '../middleware/auth.js';
-import { getUserTodos, createTodo, updateTodo, deleteTodo } from '../services/userService.js';
+import { getUserTodos, createTodo, updateTodo, deleteTodo, ListTodosOptions } from '../services/userService.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { AIService } from '../services/aiService.js';
@@ -32,7 +32,23 @@ const UpdateTodoRequest = z.object({
 router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
-    const todos = await getUserTodos(userId);
+    const { page, size, sort, startFrom, startTo } = req.query as Record<string, string>;
+
+    const parseTs = (v?: string) => {
+      if (!v) return undefined;
+      // support both seconds and milliseconds
+      const n = Number(v);
+      if (!isFinite(n)) return new Date(v);
+      return new Date(n >= 1e12 ? n : n * 1000);
+    };
+    const opts: ListTodosOptions = {
+      page: page ? parseInt(page) : undefined,
+      size: size ? parseInt(size) : undefined,
+      sort: sort === 'start_time_desc' ? 'start_time_desc' : 'start_time_asc',
+      startFrom: parseTs(startFrom),
+      startTo: parseTs(startTo)
+    };
+    const todos = await getUserTodos(userId, opts);
     res.json(todos);
   } catch (err) {
     next(err);

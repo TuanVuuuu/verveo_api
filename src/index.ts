@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { AIService } from './services/aiService.js';
 import { HealthService } from './services/healthService.js';
 import { registerUser, verifyEmail, loginUser } from './services/authService.js';
-import { getUserTodos, createTodo } from './services/userService.js';
+import { getUserTodos, createTodo, updateTodo, deleteTodo } from './services/userService.js';
 import { authenticateToken } from './middleware/auth.js';
 
 const app = express();
@@ -70,19 +70,6 @@ app.get('/health', async (_req: Request, res: Response) => {
   res.json(health);
 });
 
-app.post('/gen_todo', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const parse = GenTodoRequest.safeParse(req.body);
-    if (!parse.success) {
-      return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
-    }
-    const { prompt } = parse.data;
-    const result = await aiService.generateTodoWithDeepseek(prompt);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
 
 // Authentication routes
 app.post('/auth/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -139,18 +126,80 @@ app.get('/todos', authenticateToken, async (req: Request, res: Response, next: N
 
 app.post('/todos', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const userId = (req as any).user.userId;
+    
+    // Check if it's AI generation request
+    if (req.body.prompt) {
+      // AI generation mode
+      const aiResult = await aiService.generateTodoWithDeepseek(req.body.prompt);
+      
+      const todoData = {
+        user_id: userId,
+        title: aiResult.title,
+        due: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
+        labels: aiResult.labels ? JSON.stringify(aiResult.labels) : null,
+        priority: aiResult.priority || 'medium'
+      };
+      
+      const savedTodo = await createTodo(todoData);
+      
+      res.json({
+        ...aiResult,
+        savedTodo: savedTodo
+      });
+    } else {
+      // Manual creation mode
+      const parse = CreateTodoRequest.safeParse(req.body);
+      if (!parse.success) {
+        return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
+      }
+      
+      const todoData = { 
+        ...parse.data, 
+        user_id: userId,
+        due: parse.data.due ? new Date(parse.data.due) : undefined
+      };
+      
+      const todo = await createTodo(todoData);
+      res.json(todo);
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update todo
+app.put('/todos/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const todoId = parseInt(req.params.id);
+    const userId = (req as any).user.userId;
+    
     const parse = CreateTodoRequest.safeParse(req.body);
     if (!parse.success) {
       return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
     }
-    const userId = (req as any).user.userId;
+    
     const todoData = { 
       ...parse.data, 
       user_id: userId,
       due: parse.data.due ? new Date(parse.data.due) : undefined
     };
-    const todo = await createTodo(todoData);
-    res.json(todo);
+    
+    const updatedTodo = await updateTodo(todoId, todoData, userId);
+    res.json(updatedTodo);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete todo
+app.delete('/todos/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const todoId = parseInt(req.params.id);
+    const userId = (req as any).user.userId;
+    
+    await deleteTodo(todoId, userId);
+    res.json({ message: 'Todo deleted successfully' });
   } catch (err) {
     next(err);
   }

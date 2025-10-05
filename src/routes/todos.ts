@@ -27,17 +27,7 @@ const UpdateTodoRequest = z.object({
   progress: z.enum(['todo', 'inprogress', 'done']).optional()
 });
 
-// Manual todo creation (fallback when AI is unavailable)
-const ManualCreateTodoRequest = z.object({
-  title: z.string().min(1),
-  description: z.string().optional(),
-  start_time: z.string().datetime().optional(),
-  end_time: z.string().datetime().optional(),
-  due: z.string().datetime().optional(),
-  labels: z.array(z.string()).optional(),
-  priority: z.enum(['low', 'medium', 'high']).optional(),
-  message: z.string().optional()
-});
+// Reuse UpdateTodoRequest for manual creation (title will be checked at runtime)
 
 router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -84,11 +74,14 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
 router.post('/create-manual', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
-    const parse = ManualCreateTodoRequest.safeParse(req.body);
+    const parse = UpdateTodoRequest.safeParse(req.body);
     if (!parse.success) {
       return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
     }
     const payload = parse.data;
+    if (!payload.title) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
     const savedTodo = await createTodo({
       user_id: userId,
       title: payload.title,
@@ -96,7 +89,7 @@ router.post('/create-manual', authenticateToken, async (req: Request, res: Respo
       start_time: payload.start_time ? new Date(payload.start_time) : undefined,
       end_time: payload.end_time ? new Date(payload.end_time) : undefined,
       due: payload.due ? new Date(payload.due) : payload.start_time ? new Date(payload.start_time) : undefined,
-      labels: payload.labels || undefined,
+      labels: (payload as any).labels || undefined,
       priority: payload.priority || 'medium',
       message: payload.message,
       confidence: 1,

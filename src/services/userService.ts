@@ -7,7 +7,11 @@ export const getUserTodos = async (userId: number): Promise<Todo[]> => {
     [userId]
   );
   
-  return todos as Todo[];
+  // Parse JSON fields
+  return (todos as any[]).map(todo => ({
+    ...todo,
+    labels: todo.labels ? JSON.parse(todo.labels) : null
+  }));
 };
 
 export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
@@ -19,7 +23,11 @@ export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
   const todoId = (result as any).insertId;
   const [todos] = await pool.execute('SELECT * FROM todos WHERE id = ?', [todoId]);
   
-  return (todos as any[])[0] as Todo;
+  const todo = (todos as any[])[0];
+  return {
+    ...todo,
+    labels: todo.labels ? JSON.parse(todo.labels) : null
+  } as Todo;
 };
 
 export const updateTodo = async (todoId: number, todoData: any, userId: number): Promise<Todo> => {
@@ -67,7 +75,11 @@ export const updateTodo = async (todoId: number, todoData: any, userId: number):
     [todoId]
   );
   
-  return (updatedTodos as any[])[0] as Todo;
+  const todo = (updatedTodos as any[])[0];
+  return {
+    ...todo,
+    labels: todo.labels ? JSON.parse(todo.labels) : null
+  } as Todo;
 };
 
 export const deleteTodo = async (todoId: number, userId: number): Promise<void> => {

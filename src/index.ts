@@ -129,6 +129,8 @@ app.post('/todos', authenticateToken, async (req: Request, res: Response, next: 
     const userId = (req as any).user.userId;
     
     // Check if it's AI generation request
+    console.log('Request body:', req.body);
+    console.log('Has prompt:', !!req.body.prompt);
     if (req.body.prompt) {
       // AI generation mode
       const aiResult = await aiService.generateTodoWithDeepseek(req.body.prompt);

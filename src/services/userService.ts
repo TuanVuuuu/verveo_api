@@ -1,4 +1,6 @@
 import pool from '../config/database.js';
+import { AppError } from '../utils/errors.js';
+import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { Todo, CreateTodoData } from '../models/Todo.js';
 
 export const getUserTodos = async (userId: number): Promise<Todo[]> => {
@@ -51,7 +53,7 @@ export const updateTodo = async (todoId: number, todoData: any, userId: number):
   );
   
   if ((todos as any[]).length === 0) {
-    throw new Error('Todo not found or access denied');
+    throw new AppError(ErrorKey.TodoNotFound, getErrorMessage(ErrorKey.TodoNotFound));
   }
   
   // Update todo
@@ -141,7 +143,7 @@ export const deleteTodo = async (todoId: number, userId: number): Promise<Todo> 
   );
   
   if ((todos as any[]).length === 0) {
-    throw new Error('Todo not found or access denied');
+    throw new AppError(ErrorKey.TodoNotFound, getErrorMessage(ErrorKey.TodoNotFound));
   }
   
   const todo = (todos as any[])[0];

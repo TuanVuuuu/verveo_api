@@ -6,9 +6,9 @@ import morgan from 'morgan';
 import { z } from 'zod';
 import { AIService } from './services/aiService.js';
 import { HealthService } from './services/healthService.js';
-import { registerUser, verifyEmail, loginUser } from './services/authService.js';
-import { getUserTodos, createTodo, updateTodo, deleteTodo } from './services/userService.js';
-import { authenticateToken } from './middleware/auth.js';
+import authRouter from './routes/auth.js';
+import todosRouter from './routes/todos.js';
+import { isAppError, buildErrorPayload } from './utils/errors.js';
 
 const app = express();
 
@@ -71,141 +71,23 @@ app.get('/health', async (_req: Request, res: Response) => {
 });
 
 
-// Authentication routes
-app.post('/auth/register', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const parse = RegisterRequest.safeParse(req.body);
-    if (!parse.success) {
-      return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
-    }
-    const { email, password, name } = parse.data;
-    const result = await registerUser(email, password, name);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
+// Mount routers
+app.use('/auth', authRouter);
 
-app.get('/auth/verify', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { token } = req.query;
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({ error: 'Token is required' });
-    }
-    const result = await verifyEmail(token);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
-app.post('/auth/login', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const parse = LoginRequest.safeParse(req.body);
-    if (!parse.success) {
-      return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
-    }
-    const { email, password } = parse.data;
-    const result = await loginUser(email, password);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Todo routes (protected)
-app.get('/todos', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = (req as any).user.userId;
-    const todos = await getUserTodos(userId);
-    res.json(todos);
-  } catch (err) {
-    next(err);
-  }
-});
-
-app.post('/todos', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = (req as any).user.userId;
-    
-    // Validate prompt is required
-    const parse = GenTodoRequest.safeParse(req.body);
-    if (!parse.success) {
-      return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
-    }
-    
-    // AI generation only
-    const aiResult = await aiService.generateTodoWithDeepseek(parse.data.prompt);
-    
-    const todoData = {
-      user_id: userId,
-      title: aiResult.title,
-      description: aiResult.description,
-      start_time: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
-      end_time: aiResult.endTime ? new Date(aiResult.endTime) : undefined,
-      due: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
-      labels: aiResult.labels || undefined,
-      priority: aiResult.priority || 'medium',
-      message: aiResult.message,
-      confidence: aiResult.confidence,
-      created_by: aiResult.createdBy || undefined,
-      progress: 'todo' as const
-    };
-    
-    const savedTodo = await createTodo(todoData);
-    
-    // Return only the saved todo object (no AI metadata)
-    res.json(savedTodo);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Update todo
-app.put('/todos/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const todoId = parseInt(req.params.id);
-    const userId = (req as any).user.userId;
-    
-    const parse = CreateTodoRequest.safeParse(req.body);
-    if (!parse.success) {
-      return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
-    }
-    
-    const todoData = { 
-      ...parse.data, 
-      user_id: userId,
-      due: parse.data.due ? new Date(parse.data.due) : undefined
-    };
-    
-    const updatedTodo = await updateTodo(todoId, todoData, userId);
-    res.json(updatedTodo);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Delete todo
-app.delete('/todos/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const todoId = parseInt(req.params.id);
-    const userId = (req as any).user.userId;
-    
-    const deletedTodo = await deleteTodo(todoId, userId);
-    res.json({
-      message: 'Todo deleted successfully',
-      deletedTodo: deletedTodo
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+app.use('/todos', todosRouter);
 
 // Error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error('❌ Error:', err);
-  return res.status(500).json({ error: 'Internal Server Error' });
+  if (isAppError(err)) {
+    return res.status(err.status).json(buildErrorPayload(err.status, err.key, err.description));
+  }
+  // Validation errors from Zod
+  if (typeof err === 'object' && err && 'issues' in (err as any)) {
+    return res.status(422).json(buildErrorPayload(422, 'error.request.invalid', 'Invalid request format'));
+  }
+  return res.status(500).json(buildErrorPayload(500, 'error.internal', 'Internal Server Error'));
 });
 
 app.listen(PORT, HOST, () => {

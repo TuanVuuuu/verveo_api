@@ -128,43 +128,29 @@ app.post('/todos', authenticateToken, async (req: Request, res: Response, next: 
   try {
     const userId = (req as any).user.userId;
     
-    // Check if it's AI generation request
-    console.log('Request body:', req.body);
-    console.log('Has prompt:', !!req.body.prompt);
-    if (req.body.prompt) {
-      // AI generation mode
-      const aiResult = await aiService.generateTodoWithDeepseek(req.body.prompt);
-      
-      const todoData = {
-        user_id: userId,
-        title: aiResult.title,
-        due: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
-        labels: aiResult.labels ? JSON.stringify(aiResult.labels) : null,
-        priority: aiResult.priority || 'medium'
-      };
-      
-      const savedTodo = await createTodo(todoData);
-      
-      res.json({
-        ...aiResult,
-        savedTodo: savedTodo
-      });
-    } else {
-      // Manual creation mode
-      const parse = CreateTodoRequest.safeParse(req.body);
-      if (!parse.success) {
-        return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
-      }
-      
-      const todoData = { 
-        ...parse.data, 
-        user_id: userId,
-        due: parse.data.due ? new Date(parse.data.due) : undefined
-      };
-      
-      const todo = await createTodo(todoData);
-      res.json(todo);
+    // Validate prompt is required
+    const parse = GenTodoRequest.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({ error: 'Invalid request format', details: parse.error.flatten() });
     }
+    
+    // AI generation only
+    const aiResult = await aiService.generateTodoWithDeepseek(parse.data.prompt);
+    
+    const todoData = {
+      user_id: userId,
+      title: aiResult.title,
+      due: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
+      labels: aiResult.labels ? JSON.stringify(aiResult.labels) : null,
+      priority: aiResult.priority || 'medium'
+    };
+    
+    const savedTodo = await createTodo(todoData);
+    
+    res.json({
+      ...aiResult,
+      savedTodo: savedTodo
+    });
   } catch (err) {
     next(err);
   }

@@ -16,8 +16,21 @@ export const getUserTodos = async (userId: number): Promise<Todo[]> => {
 
 export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
   const [result] = await pool.execute(
-    'INSERT INTO todos (user_id, title, due, labels, priority) VALUES (?, ?, ?, ?, ?)',
-    [todoData.user_id, todoData.title, todoData.due, todoData.labels ? JSON.stringify(todoData.labels) : null, todoData.priority]
+    'INSERT INTO todos (user_id, title, description, start_time, end_time, due, labels, priority, message, confidence, created_by, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+      todoData.user_id, 
+      todoData.title, 
+      todoData.description,
+      todoData.start_time,
+      todoData.end_time,
+      todoData.due, 
+      todoData.labels ? JSON.stringify(todoData.labels) : null, 
+      todoData.priority,
+      todoData.message,
+      todoData.confidence,
+      todoData.created_by,
+      todoData.progress || 'todo'
+    ]
   );
   
   const todoId = (result as any).insertId;
@@ -49,17 +62,55 @@ export const updateTodo = async (todoId: number, todoData: any, userId: number):
     updateFields.push('title = ?');
     values.push(todoData.title);
   }
+  
+  if (todoData.description) {
+    updateFields.push('description = ?');
+    values.push(todoData.description);
+  }
+  
+  if (todoData.start_time) {
+    updateFields.push('start_time = ?');
+    values.push(todoData.start_time);
+  }
+  
+  if (todoData.end_time) {
+    updateFields.push('end_time = ?');
+    values.push(todoData.end_time);
+  }
+  
   if (todoData.due) {
     updateFields.push('due = ?');
     values.push(todoData.due);
   }
+  
   if (todoData.labels) {
     updateFields.push('labels = ?');
     values.push(JSON.stringify(todoData.labels));
   }
+  
   if (todoData.priority) {
     updateFields.push('priority = ?');
     values.push(todoData.priority);
+  }
+  
+  if (todoData.message) {
+    updateFields.push('message = ?');
+    values.push(todoData.message);
+  }
+  
+  if (todoData.confidence !== undefined) {
+    updateFields.push('confidence = ?');
+    values.push(todoData.confidence);
+  }
+  
+  if (todoData.created_by) {
+    updateFields.push('created_by = ?');
+    values.push(todoData.created_by);
+  }
+  
+  if (todoData.progress) {
+    updateFields.push('progress = ?');
+    values.push(todoData.progress);
   }
   
   values.push(todoId);
@@ -82,10 +133,10 @@ export const updateTodo = async (todoId: number, todoData: any, userId: number):
   } as Todo;
 };
 
-export const deleteTodo = async (todoId: number, userId: number): Promise<void> => {
-  // Check if todo belongs to user
+export const deleteTodo = async (todoId: number, userId: number): Promise<Todo> => {
+  // Check if todo belongs to user and get data before deletion
   const [todos] = await pool.execute(
-    'SELECT id FROM todos WHERE id = ? AND user_id = ?',
+    'SELECT * FROM todos WHERE id = ? AND user_id = ?',
     [todoId, userId]
   );
   
@@ -93,9 +144,17 @@ export const deleteTodo = async (todoId: number, userId: number): Promise<void> 
     throw new Error('Todo not found or access denied');
   }
   
+  const todo = (todos as any[])[0];
+  
   // Delete todo
   await pool.execute(
     'DELETE FROM todos WHERE id = ?',
     [todoId]
   );
+  
+  // Return the deleted todo data
+  return {
+    ...todo,
+    labels: todo.labels ? JSON.parse(todo.labels) : null
+  } as Todo;
 };

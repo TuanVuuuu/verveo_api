@@ -140,9 +140,16 @@ app.post('/todos', authenticateToken, async (req: Request, res: Response, next: 
     const todoData = {
       user_id: userId,
       title: aiResult.title,
+      description: aiResult.description,
+      start_time: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
+      end_time: aiResult.endTime ? new Date(aiResult.endTime) : undefined,
       due: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
-      labels: aiResult.labels || null,
-      priority: aiResult.priority || 'medium'
+      labels: aiResult.labels || undefined,
+      priority: aiResult.priority || 'medium',
+      message: aiResult.message,
+      confidence: aiResult.confidence,
+      created_by: aiResult.createdBy || undefined,
+      progress: 'todo' as const
     };
     
     const savedTodo = await createTodo(todoData);
@@ -186,8 +193,11 @@ app.delete('/todos/:id', authenticateToken, async (req: Request, res: Response, 
     const todoId = parseInt(req.params.id);
     const userId = (req as any).user.userId;
     
-    await deleteTodo(todoId, userId);
-    res.json({ message: 'Todo deleted successfully' });
+    const deletedTodo = await deleteTodo(todoId, userId);
+    res.json({
+      message: 'Todo deleted successfully',
+      deletedTodo: deletedTodo
+    });
   } catch (err) {
     next(err);
   }

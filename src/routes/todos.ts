@@ -32,7 +32,7 @@ const UpdateTodoRequest = z.object({
 router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
-    const { page, size, sort, startFrom, startTo } = req.query as Record<string, string>;
+    const { page, size, sort, startFrom, startTo, label, progress, priority } = req.query as Record<string, string>;
 
     const parseTs = (v?: string) => {
       if (!v) return undefined;
@@ -46,7 +46,10 @@ router.get('/', authenticateToken, async (req: Request, res: Response, next: Nex
       size: size ? parseInt(size) : undefined,
       sort: sort === 'start_time_desc' ? 'start_time_desc' : 'start_time_asc',
       startFrom: parseTs(startFrom),
-      startTo: parseTs(startTo)
+      startTo: parseTs(startTo),
+      label: label || undefined,
+      progress: progress === 'todo' || progress === 'inprogress' || progress === 'done' ? (progress as any) : undefined,
+      priority: priority === 'low' || priority === 'medium' || priority === 'high' ? (priority as any) : undefined
     };
     const todos = await getUserTodos(userId, opts);
     res.json(todos);

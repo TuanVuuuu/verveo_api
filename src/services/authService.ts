@@ -3,6 +3,8 @@ import { hashPassword, comparePassword, generateVerificationToken } from '../uti
 import { generateToken } from '../utils/jwt.js';
 import { sendVerificationEmail } from './emailService.js';
 import { User, CreateUserData } from '../models/User.js';
+import { AppError } from '../utils/errors.js';
+import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 
 export const registerUser = async (email: string, password: string, name: string) => {
   // Check if user exists
@@ -12,7 +14,7 @@ export const registerUser = async (email: string, password: string, name: string
   );
   
   if ((existingUsers as any[]).length > 0) {
-    throw new Error('User already exists');
+    throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
   }
   
   // Hash password and generate token
@@ -40,7 +42,7 @@ export const verifyEmail = async (token: string) => {
   );
   
   if ((users as any[]).length === 0) {
-    throw new Error('Invalid verification token');
+    throw new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken));
   }
   
   await pool.execute(
@@ -58,18 +60,18 @@ export const loginUser = async (email: string, password: string) => {
   );
   
   if ((users as any[]).length === 0) {
-    throw new Error('User not found');
+    throw new AppError(ErrorKey.AuthInvalidCredentials, getErrorMessage(ErrorKey.AuthInvalidCredentials));
   }
   
   const user = (users as any[])[0] as User;
   
   if (!user.is_verified) {
-    throw new Error('Please verify your email first');
+    throw new AppError(ErrorKey.AuthEmailNotVerified, getErrorMessage(ErrorKey.AuthEmailNotVerified));
   }
   
   const isValidPassword = await comparePassword(password, user.password_hash);
   if (!isValidPassword) {
-    throw new Error('Invalid password');
+    throw new AppError(ErrorKey.AuthInvalidCredentials, getErrorMessage(ErrorKey.AuthInvalidCredentials));
   }
   
   const token = generateToken(user.id);

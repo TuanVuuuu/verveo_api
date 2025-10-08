@@ -9,6 +9,9 @@ export type ListTodosOptions = {
   page?: number;
   size?: number;
   sort?: 'start_time_asc' | 'start_time_desc';
+  label?: string; // filter todos that contain this label in labels JSON array
+  progress?: 'todo' | 'inprogress' | 'done';
+  priority?: 'low' | 'medium' | 'high';
 };
 
 export const getUserTodos = async (userId: number, opts: ListTodosOptions = {}): Promise<Todo[]> => {
@@ -26,6 +29,19 @@ export const getUserTodos = async (userId: number, opts: ListTodosOptions = {}):
   if (opts.startTo) {
     where.push('start_time <= ?');
     values.push(opts.startTo);
+  }
+  if (opts.label) {
+    // labels is a JSON array; match if any element equals the label (case-sensitive by default)
+    where.push("labels IS NOT NULL AND JSON_SEARCH(labels, 'one', ?) IS NOT NULL");
+    values.push(opts.label);
+  }
+  if (opts.progress) {
+    where.push('progress = ?');
+    values.push(opts.progress);
+  }
+  if (opts.priority) {
+    where.push('priority = ?');
+    values.push(opts.priority);
   }
 
   const sql = `SELECT * FROM todos WHERE ${where.join(' AND ')} ORDER BY start_time ${sortClause}, id ${sortClause} LIMIT ? OFFSET ?`;

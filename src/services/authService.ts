@@ -78,3 +78,70 @@ export const loginUser = async (email: string, password: string) => {
   
   return { token, user: { id: user.id, email: user.email, name: user.name } };
 };
+
+export const getUserProfile = async (userId: number) => {
+  const [users] = await pool.execute(
+    'SELECT id, email, name FROM users WHERE id = ?',
+    [userId]
+  );
+  
+  if ((users as any[]).length === 0) {
+    throw new AppError(ErrorKey.Unauthorized, getErrorMessage(ErrorKey.Unauthorized));
+  }
+  
+  const user = (users as any[])[0];
+  return { id: user.id, email: user.email, name: user.name };
+};
+
+export const updateUserProfile = async (userId: number, updateData: { name?: string; currentPassword?: string; newPassword?: string }) => {
+  const [users] = await pool.execute(
+    'SELECT * FROM users WHERE id = ?',
+    [userId]
+  );
+  
+  if ((users as any[]).length === 0) {
+    throw new AppError(ErrorKey.Unauthorized, getErrorMessage(ErrorKey.Unauthorized));
+  }
+  
+  const user = (users as any[])[0] as User;
+  
+  // If changing password, verify current password
+  if (updateData.newPassword && updateData.currentPassword) {
+    const isValidPassword = await comparePassword(updateData.currentPassword, user.password_hash);
+    if (!isValidPassword) {
+      throw new AppError(ErrorKey.AuthInvalidCredentials, getErrorMessage(ErrorKey.AuthInvalidCredentials));
+    }
+  }
+  
+  // Prepare update fields
+  const updateFields = [];
+  const values = [];
+  
+  if (updateData.name) {
+    updateFields.push('name = ?');
+    values.push(updateData.name);
+  }
+  
+  if (updateData.newPassword) {
+    const newPasswordHash = await hashPassword(updateData.newPassword);
+    updateFields.push('password_hash = ?');
+    values.push(newPasswordHash);
+  }
+  
+  if (updateFields.length > 0) {
+    values.push(userId);
+    await pool.execute(
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+      values
+    );
+  }
+  
+  // Return updated user profile
+  const [updatedUsers] = await pool.execute(
+    'SELECT id, email, name FROM users WHERE id = ?',
+    [userId]
+  );
+  
+  const updatedUser = (updatedUsers as any[])[0];
+  return { id: updatedUser.id, email: updatedUser.email, name: updatedUser.name };
+};

@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.2] - 2025-01-27
+### Added
+- GET `/auth/me`: Get current user profile
+- PUT `/auth/profile`: Update user profile (name and/or password)
+- Password change functionality with current password verification
+- Enhanced authentication middleware for protected routes
+- Complete user profile management system
+
+### Fixed
+- Missing authentication routes that were documented in API_SPEC.md
+- User profile access and update functionality
+- Password change security with current password validation
+
+### Changed
+- Enhanced authentication service with profile management
+- Improved error handling for authentication operations
+- Standardized response format for all authentication endpoints
+
 ## [2.0.1] - 2025-10-05
 ### Added
 - POST `/todos/create-manual`: manual todo creation (fallback when AI is unavailable)

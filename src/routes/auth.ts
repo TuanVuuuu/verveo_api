@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { registerUser, verifyEmail, loginUser } from '../services/authService.js';
+import { registerUser, verifyEmail, loginUser, getUserProfile, updateUserProfile } from '../services/authService.js';
+import { authenticateToken } from '../middleware/auth.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 
@@ -15,6 +16,18 @@ const RegisterRequest = z.object({
 const LoginRequest = z.object({
   email: z.string().email(),
   password: z.string().min(1)
+});
+
+const UpdateProfileRequest = z.object({
+  name: z.string().min(1).optional(),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(6).optional()
+}).refine((data) => {
+  // If newPassword is provided, currentPassword is required
+  if (data.newPassword && !data.currentPassword) {
+    return false;
+  }
+  return true;
 });
 
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -52,6 +65,32 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     }
     const { email, password } = parse.data;
     const result = await loginUser(email, password);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /auth/me - Get current user profile
+router.get('/me', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const result = await getUserProfile(userId);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /auth/profile - Update user profile
+router.put('/profile', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parse = UpdateProfileRequest.safeParse(req.body);
+    if (!parse.success) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+    const userId = (req as any).user.userId;
+    const result = await updateUserProfile(userId, parse.data);
     res.json(result);
   } catch (err) {
     next(err);

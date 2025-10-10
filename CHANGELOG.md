@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.3] - 2025-01-27
+### Fixed
+- JWT token expiration now returns 401 with error.auth.token_expired
+- Invalid token returns 401 with error.auth.invalid_token
+- Better error handling for different JWT error types
+- Enhanced authentication middleware with specific JWT error handling
+
+### Changed
+- Updated API_SPEC.md with correct error responses
+- Added AuthTokenExpired error key to error catalog
+- Standardized 401 responses for authentication issues
+- Improved error messages for better client understanding
+
 ## [2.0.2] - 2025-01-27
 ### Added
 - GET `/auth/me`: Get current user profile

@@ -16,6 +16,15 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     (req as any).user = decoded;
     next();
   } catch (error) {
-    return next(new AppError(ErrorKey.Forbidden, getErrorMessage(ErrorKey.Forbidden)));
+    // Check if it's a JWT expiration error
+    if (error instanceof Error && error.name === 'TokenExpiredError') {
+      return next(new AppError(ErrorKey.AuthTokenExpired, getErrorMessage(ErrorKey.AuthTokenExpired)));
+    }
+    // Check if it's a JWT malformed error
+    if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'NotBeforeError')) {
+      return next(new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken)));
+    }
+    // Other JWT errors
+    return next(new AppError(ErrorKey.Unauthorized, getErrorMessage(ErrorKey.Unauthorized)));
   }
 };

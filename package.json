@@ -1,6 +1,6 @@
 {
   "name": "api_verveo",
-  "version": "2.0.0",
+  "version": "2.0.3",
   "private": true,
   "type": "module",
   "description": "Verveo Todo Generator API (Node.js/Express) - DeepSeek via OpenRouter",

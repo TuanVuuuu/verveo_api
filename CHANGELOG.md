@@ -16,6 +16,7 @@
 - Reset password UI converted to English
 - Fixed Content Security Policy issues with inline JavaScript
 - Separated JavaScript into external file for better security
+- Fixed password change UX: incorrect current password now returns 403 instead of 401 to prevent auto-logout
 
 ## [2.0.3] - 2025-01-27
 ### Fixed

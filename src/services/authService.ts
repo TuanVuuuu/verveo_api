@@ -109,7 +109,7 @@ export const updateUserProfile = async (userId: number, updateData: { name?: str
   if (updateData.newPassword && updateData.currentPassword) {
     const isValidPassword = await comparePassword(updateData.currentPassword, user.password_hash);
     if (!isValidPassword) {
-      throw new AppError(ErrorKey.AuthInvalidCredentials, getErrorMessage(ErrorKey.AuthInvalidCredentials));
+      throw new AppError(ErrorKey.AuthCurrentPasswordIncorrect, getErrorMessage(ErrorKey.AuthCurrentPasswordIncorrect));
     }
   }
   

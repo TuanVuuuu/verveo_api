@@ -14,7 +14,7 @@ const app = express();
 
 // Config
 const APP_TITLE = process.env.APP_TITLE || 'Verveo Todo Generator API (Node)';
-const APP_VERSION = process.env.APP_VERSION || '2.0.3';
+const APP_VERSION = process.env.APP_VERSION || '2.0.4';
 const APP_DESCRIPTION = process.env.APP_DESCRIPTION || 'API thông minh để tạo todo từ prompt sử dụng DeepSeek AI';
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = parseInt(process.env.PORT || '8000', 10);
@@ -24,6 +24,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Serve static files from public directory
+app.use(express.static('public'));
 
 // Services
 const aiService = new AIService();

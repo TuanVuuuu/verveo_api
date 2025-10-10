@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.4] - 2025-01-27
+### Added
+- POST `/auth/forgot-password`: Request password reset email
+- POST `/auth/reset-password`: Reset password using token from email
+- Password reset functionality with secure token-based flow
+- Email service for sending password reset emails
+- Database migration for reset password fields (reset_token, reset_token_expiry)
+
+### Changed
+- Enhanced authentication system with password recovery
+- Updated API_SPEC.md with new password reset endpoints
+- Added AuthResetTokenExpired error key to error catalog
+- Improved security with token expiration (1 hour)
+- Reset password UI converted to English
+- Fixed Content Security Policy issues with inline JavaScript
+- Separated JavaScript into external file for better security
+
 ## [2.0.3] - 2025-01-27
 ### Fixed
 - JWT token expiration now returns 401 with error.auth.token_expired

@@ -15,6 +15,7 @@ export enum ErrorKey {
   AuthEmailNotVerified = 'error.auth.email_not_verified',
   AuthInvalidToken = 'error.auth.invalid_token',
   AuthTokenExpired = 'error.auth.token_expired',
+  AuthResetTokenExpired = 'error.auth.reset_token_expired',
 
   TodoNotFound = 'error.todo.not_found',
 }
@@ -32,6 +33,7 @@ export const ERROR_CATALOG: Record<ErrorKey, ErrorEntry> = {
   [ErrorKey.AuthEmailNotVerified]: { message: 'Please verify your email first', http: 403 },
   [ErrorKey.AuthInvalidToken]: { message: 'Invalid token', http: 401 },
   [ErrorKey.AuthTokenExpired]: { message: 'Token has expired', http: 401 },
+  [ErrorKey.AuthResetTokenExpired]: { message: 'Reset token has expired', http: 401 },
 
   // Todos
   [ErrorKey.TodoNotFound]: { message: 'Todo not found or access denied', http: 404 },

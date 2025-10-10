@@ -38,7 +38,7 @@ TOP_P=0.9
 
 # Tùy chọn - Application
 APP_TITLE=Verveo Todo Generator API (Node)
-APP_VERSION=2.0.0
+APP_VERSION=2.0.4
 APP_DESCRIPTION=API thông minh để tạo todo từ prompt sử dụng DeepSeek AI
 
 # Tùy chọn - Server

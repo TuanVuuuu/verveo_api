@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 import { hashPassword, comparePassword, generateVerificationToken } from '../utils/crypto.js';
 import { generateToken } from '../utils/jwt.js';
-import { sendVerificationEmail } from './emailService.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from './emailService.js';
 import { User, CreateUserData } from '../models/User.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
@@ -144,4 +144,55 @@ export const updateUserProfile = async (userId: number, updateData: { name?: str
   
   const updatedUser = (updatedUsers as any[])[0];
   return { id: updatedUser.id, email: updatedUser.email, name: updatedUser.name };
+};
+
+export const forgotPassword = async (email: string) => {
+  // Check if user exists
+  const [users] = await pool.execute(
+    'SELECT id FROM users WHERE email = ? AND is_verified = true',
+    [email]
+  );
+  
+  // Always return success message for security (don't reveal if email exists)
+  if ((users as any[]).length === 0) {
+    return { status: 0, message: 'success', data: { message: 'Password reset email sent if account exists' } };
+  }
+  
+  // Generate reset token
+  const resetToken = generateVerificationToken();
+  const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+  
+  // Store reset token in database
+  await pool.execute(
+    'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?',
+    [resetToken, resetTokenExpiry, email]
+  );
+  
+  // Send reset email
+  await sendPasswordResetEmail(email, resetToken);
+  
+  return { status: 0, message: 'success', data: { message: 'Password reset email sent if account exists' } };
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  // Check if token exists and is not expired
+  const [users] = await pool.execute(
+    'SELECT id FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()',
+    [token]
+  );
+  
+  if ((users as any[]).length === 0) {
+    throw new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken));
+  }
+  
+  // Hash new password
+  const passwordHash = await hashPassword(newPassword);
+  
+  // Update password and clear reset token
+  await pool.execute(
+    'UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = ?',
+    [passwordHash, token]
+  );
+  
+  return { status: 0, message: 'success', data: { message: 'Password reset successfully' } };
 };

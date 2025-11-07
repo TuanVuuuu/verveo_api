@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.0.5] - 2025-11-07
+### Added
+- Brevo (formerly Sendinblue) email service integration
+- Replaced Gmail SMTP with Brevo Transactional API
+- Domain verification for verveo.click
+- IP authorization for API security
+- Enhanced email templates with improved styling and branding
+- Test email script for local testing
+
+### Changed
+- Migrated from nodemailer (Gmail) to @getbrevo/brevo SDK
+- Updated email service (`src/services/emailService.ts`) to use Brevo Transactional API
+- Enhanced email templates with better styling and responsive design
+- Improved email deliverability with domain authentication (SPF, DKIM, DMARC)
+- Updated environment variables: Added `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME`
+
+### Fixed
+- Resolved 401 Unauthorized error by authorizing IP address in Brevo
+- Fixed API key authentication in Brevo SDK
+- Improved error handling in email service
+
+### Testing
+- ✅ Email verification emails sent and received successfully
+- ✅ Password reset emails sent and received successfully
+- ✅ Local testing completed with test email script
+
 ## [2.0.4] - 2025-01-27
 ### Added
 - POST `/auth/forgot-password`: Request password reset email

@@ -1,6 +1,6 @@
 {
   "name": "api_verveo",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "private": true,
   "type": "module",
   "description": "Verveo Todo Generator API (Node.js/Express) - DeepSeek via OpenRouter",
@@ -12,6 +12,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
     "axios": "^1.7.7",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",

@@ -6,6 +6,8 @@ import { Todo, CreateTodoData } from '../models/Todo.js';
 export type ListTodosOptions = {
   startFrom?: Date;
   startTo?: Date;
+  dueFrom?: Date;
+  dueTo?: Date;
   page?: number;
   size?: number;
   sort?: 'start_time_asc' | 'start_time_desc';
@@ -29,6 +31,14 @@ export const getUserTodos = async (userId: number, opts: ListTodosOptions = {}):
   if (opts.startTo) {
     where.push('start_time <= ?');
     values.push(opts.startTo);
+  }
+  if (opts.dueFrom) {
+    where.push('due >= ?');
+    values.push(opts.dueFrom);
+  }
+  if (opts.dueTo) {
+    where.push('due <= ?');
+    values.push(opts.dueTo);
   }
   if (opts.label) {
     // labels is a JSON array; match if any element equals the label (case-sensitive by default)

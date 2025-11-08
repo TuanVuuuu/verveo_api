@@ -60,20 +60,18 @@ router.get('/', authenticateToken, async (req: Request, res: Response, next: Nex
 
 router.post('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req as any).user.userId;
     const parse = GenTodoRequest.safeParse(req.body);
     if (!parse.success) {
       return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
     }
     const aiResult = await aiService.generateTodoWithDeepseek(parse.data.prompt);
 
-    const todoData = {
-      user_id: userId,
+    const todoResponse = {
       title: aiResult.title,
       description: aiResult.description,
-      start_time: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
-      end_time: aiResult.endTime ? new Date(aiResult.endTime) : undefined,
-      due: aiResult.startTime ? new Date(aiResult.startTime) : undefined,
+      start_time: aiResult.startTime ? new Date(aiResult.startTime).toISOString() : undefined,
+      end_time: aiResult.endTime ? new Date(aiResult.endTime).toISOString() : undefined,
+      due: aiResult.startTime ? new Date(aiResult.startTime).toISOString() : undefined,
       labels: aiResult.labels || undefined,
       priority: aiResult.priority || 'medium',
       message: aiResult.message,
@@ -82,8 +80,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
       progress: 'todo' as const
     };
 
-    const savedTodo = await createTodo(todoData);
-    res.json(savedTodo);
+    res.json(todoResponse);
   } catch (err) {
     next(err);
   }

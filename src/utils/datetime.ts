@@ -1,3 +1,5 @@
+import { LunarDate, SolarDate } from '@nghiavuive/lunar_date_vi';
+
 export class DateTime {
   static format(date: Date): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
@@ -32,6 +34,33 @@ export class DateTime {
       return DateTime.format(dt);
     } catch {
       return DateTime.offsetHours(3);
+    }
+  }
+
+  static convertLunarToSolar(lunarYear: number, lunarMonth: number, lunarDay: number): Date | null {
+    try {
+      const lunarDate = new LunarDate({ year: lunarYear, month: lunarMonth, day: lunarDay });
+      const solarDate = lunarDate.toSolarDate();
+      const solarData = solarDate.get();
+      return new Date(solarData.year, solarData.month - 1, solarData.day);
+    } catch {
+      return null;
+    }
+  }
+
+  static getCurrentLunarDate(): { year: number; month: number; day: number } | null {
+    try {
+      const now = new Date();
+      const solarDate = new SolarDate(now);
+      const lunarDate = solarDate.toLunarDate();
+      const lunarData = lunarDate.get();
+      return {
+        year: lunarData.year,
+        month: lunarData.month,
+        day: lunarData.day
+      };
+    } catch {
+      return null;
     }
   }
 }

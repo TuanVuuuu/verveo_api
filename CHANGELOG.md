@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.0.6] - 2025-01-XX
+### Added
+- Lunar calendar support in `generateTodoWithDeepseek`
+- Automatic conversion from lunar calendar dates to solar calendar dates
+- Utility functions for lunar calendar conversion (`convertLunarToSolar`, `getCurrentLunarDate`)
+- Integration with `@nghiavuive/lunar_date_vi` library for accurate lunar calendar calculations
+
+### Changed
+- POST `/todos` now returns AI-generated todo response without saving to database
+- Only POST `/todos/create-manual` saves todos to database
+- Enhanced AI prompts to understand and process lunar calendar dates
+- System prompt now includes instructions for handling lunar calendar dates
+- User prompt now includes current lunar calendar date information
+
+### Technical Details
+- When user mentions lunar calendar dates (e.g., "mùng 1 âm", "ngày rằm", "15 âm"), AI will:
+  1. Recognize the lunar calendar date from the prompt
+  2. Calculate the corresponding solar calendar date
+  3. Return todo with solar calendar dates in `startTime` and `endTime`
+- Example: If user says "đi chợ vào mùng 1 âm sắp tới", system will convert to the corresponding solar date (e.g., 20/10/2025)
+
 ## [2.0.5] - 2025-11-07
 ### Added
 - Brevo (formerly Sendinblue) email service integration

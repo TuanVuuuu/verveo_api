@@ -61,15 +61,15 @@ export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
     [
       todoData.user_id, 
       todoData.title, 
-      todoData.description,
-      todoData.start_time,
-      todoData.end_time,
-      todoData.due, 
+      todoData.description ?? null,
+      todoData.start_time ?? null,
+      todoData.end_time ?? null,
+      todoData.due ?? null, 
       todoData.labels ? JSON.stringify(todoData.labels) : null, 
-      todoData.priority,
-      todoData.message,
-      todoData.confidence,
-      todoData.created_by,
+      todoData.priority ?? 'medium',
+      todoData.message ?? null,
+      todoData.confidence ?? null,
+      todoData.created_by ?? null,
       todoData.progress || 'todo'
     ]
   );

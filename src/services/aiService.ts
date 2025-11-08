@@ -140,13 +140,15 @@ XỬ LÝ NGÀY ÂM LỊCH - QUAN TRỌNG:
   4. Sử dụng ngày dương lịch đã chuyển đổi để tạo startTime và endTime
 
 QUY TẮC TÌM NGÀY ÂM LỊCH GẦN NHẤT - ĐẶC BIỆT QUAN TRỌNG:
-- Khi prompt chỉ nhắc đến ngày âm lịch mà KHÔNG có tháng cụ thể (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 1 âm lịch"), bạn PHẢI tìm ngày âm lịch GẦN NHẤT trong tương lai:
+- Khi prompt chỉ nhắc đến ngày âm lịch mà KHÔNG có tháng cụ thể (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 1 âm lịch", "mùng 5 âm lịch"), bạn PHẢI tìm ngày âm lịch GẦN NHẤT trong TƯƠNG LAI (KHÔNG PHẢI quá khứ):
   * BƯỚC 1: So sánh SỐ NGÀY được nhắc đến với SỐ NGÀY hiện tại (chỉ so sánh số, không so sánh tháng)
   * BƯỚC 2: Xác định tháng:
     - Nếu SỐ NGÀY hiện tại > SỐ NGÀY được nhắc đến → ngày đó trong tháng hiện tại ĐÃ QUA → phải dùng THÁNG TIẾP THEO
     - Nếu SỐ NGÀY hiện tại < SỐ NGÀY được nhắc đến → ngày đó trong tháng hiện tại CHƯA ĐẾN → dùng THÁNG HIỆN TẠI
   * BƯỚC 3: Chuyển đổi ngày âm lịch đã xác định sang ngày dương lịch tương ứng
-  * BƯỚC 4: Sử dụng ngày dương lịch đó để tạo startTime và endTime
+  * BƯỚC 4: VERIFY ngày dương lịch phải TRONG TƯƠNG LAI (sau ngày hiện tại), KHÔNG PHẢI quá khứ
+  * BƯỚC 5: Nếu ngày dương lịch là quá khứ → phải tìm tháng tiếp theo và chuyển đổi lại
+  * BƯỚC 6: Sử dụng ngày dương lịch đó để tạo startTime và endTime
 
 PHÂN BIỆT QUAN TRỌNG - "MÙNG 1 ÂM LỊCH" vs "MÙNG 1 TẾT":
 - "mùng 1 âm lịch" hoặc "mùng 1 âm" = tìm MÙNG 1 ÂM LỊCH GẦN NHẤT trong tương lai (có thể là tháng 10, 11, 12, hoặc tháng 1 năm sau)
@@ -157,15 +159,27 @@ PHÂN BIỆT QUAN TRỌNG - "MÙNG 1 ÂM LỊCH" vs "MÙNG 1 TẾT":
   * KHÔNG PHẢI mùng 1 tháng 1 âm lịch (Tết)
 
 VÍ DỤ CHI TIẾT - PHẢI LÀM THEO ĐÚNG:
-- Ví dụ 1: Nếu hôm nay là mùng 19 tháng 9 âm và prompt là "ngày mùng 1 âm lịch":
+- Ví dụ 1: Nếu hôm nay là mùng 19 tháng 9 âm (9/11/2025) và prompt là "ngày mùng 1 âm lịch":
   * Ngày được nhắc đến: mùng 1 (số = 1)
   * Ngày hiện tại: mùng 19 (số = 19)
   * So sánh SỐ: 19 > 1 → mùng 1 tháng 9 âm ĐÃ QUA rồi
   * → PHẢI tìm mùng 1 tháng 10 âm (tháng tiếp theo)
   * → Chuyển đổi mùng 1 tháng 10 âm năm 2025 sang dương lịch (ví dụ: 20/11/2025)
+  * → VERIFY: 20/11/2025 > 9/11/2025 (ngày hiện tại) → ĐÚNG, trong tương lai
   * → Tạo startTime và endTime cho ngày 20/11/2025 (ví dụ: 2025-11-20 08:00:00)
   * → KẾT QUẢ: startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-30, KHÔNG PHẢI 2026-01-28 (mùng 1 Tết)
   * → LƯU Ý: "mùng 1 âm lịch" KHÔNG PHẢI "mùng 1 Tết", phải tìm mùng 1 gần nhất (tháng 10), không phải tháng 1
+
+- Ví dụ 4: Nếu hôm nay là mùng 19 tháng 9 âm (9/11/2025) và prompt là "mùng 5 âm lịch giỗ ông nội":
+  * Ngày được nhắc đến: mùng 5 (số = 5)
+  * Ngày hiện tại: mùng 19 (số = 19)
+  * So sánh SỐ: 19 > 5 → mùng 5 tháng 9 âm ĐÃ QUA rồi
+  * → PHẢI tìm mùng 5 tháng 10 âm (tháng tiếp theo)
+  * → Chuyển đổi mùng 5 tháng 10 âm năm 2025 sang dương lịch (ví dụ: 24/11/2025)
+  * → VERIFY: 24/11/2025 > 9/11/2025 (ngày hiện tại) → ĐÚNG, trong tương lai
+  * → Tạo startTime và endTime cho ngày 24/11/2025 (ví dụ: 2025-11-24 08:00:00)
+  * → KẾT QUẢ: startTime = 2025-11-24 08:00:00, KHÔNG PHẢI 2025-10-26 (quá khứ)
+  * → QUAN TRỌNG: Ngày dương lịch PHẢI trong tương lai, KHÔNG PHẢI quá khứ
 
 - Ví dụ 2: Nếu hôm nay là mùng 5 tháng 9 âm và prompt là "ngày rằm":
   * Ngày được nhắc đến: rằm = 15 (số = 15)
@@ -240,14 +254,19 @@ LƯU Ý QUAN TRỌNG - PHẢI TUÂN THỦ:
 - "Tháng sau" trong âm lịch = tháng âm lịch hiện tại + 1
 - "Tháng này" trong âm lịch = tháng âm lịch hiện tại
 - "Sắp tới" = tìm ngày âm lịch gần nhất trong tương lai
-- Khi prompt chỉ có ngày âm lịch KHÔNG có tháng (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 1 âm lịch"):
-  * PHẢI tìm ngày âm lịch GẦN NHẤT trong tương lai
+- Khi prompt chỉ có ngày âm lịch KHÔNG có tháng (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 1 âm lịch", "mùng 5 âm lịch"):
+  * PHẢI tìm ngày âm lịch GẦN NHẤT trong TƯƠNG LAI (KHÔNG PHẢI quá khứ)
   * QUY TẮC SO SÁNH:
     + So sánh SỐ NGÀY được nhắc đến với SỐ NGÀY hiện tại
     + Nếu ngày hiện tại > ngày được nhắc đến → ngày đó trong tháng hiện tại đã qua → dùng tháng tiếp theo
     + Nếu ngày hiện tại < ngày được nhắc đến → ngày đó trong tháng hiện tại chưa đến → dùng tháng hiện tại
+  * QUY TẮC VERIFY:
+    + Sau khi chuyển đổi sang dương lịch, PHẢI verify ngày đó TRONG TƯƠNG LAI (sau ngày hiện tại)
+    + Nếu ngày dương lịch là QUÁ KHỨ → PHẢI tìm tháng tiếp theo và chuyển đổi lại
+    + KHÔNG BAO GIỜ trả về ngày trong quá khứ
   * Ví dụ: Hôm nay mùng 19, prompt "mùng 1" → 19 > 1 → mùng 1 tháng này đã qua → dùng mùng 1 tháng sau
   * Ví dụ: Hôm nay mùng 5, prompt "rằm" (15) → 5 < 15 → rằm tháng này chưa đến → dùng rằm tháng này
+  * Ví dụ: Hôm nay 9/11/2025 (mùng 19 tháng 9 âm), prompt "mùng 5 âm lịch" → 19 > 5 → mùng 5 tháng 9 đã qua → dùng mùng 5 tháng 10 → verify: 24/11/2025 > 9/11/2025 → ĐÚNG
 - PHÂN BIỆT QUAN TRỌNG:
   * "mùng 1 âm lịch" hoặc "mùng 1 âm" = tìm MÙNG 1 ÂM LỊCH GẦN NHẤT (có thể là tháng 10, 11, 12, hoặc tháng 1 năm sau)
   * "mùng 1 Tết" hoặc "mùng 1 Tết Nguyên Đán" = MÙNG 1 THÁNG 1 ÂM LỊCH (Tết Nguyên Đán)

@@ -148,6 +148,14 @@ QUY TẮC TÌM NGÀY ÂM LỊCH GẦN NHẤT - ĐẶC BIỆT QUAN TRỌNG:
   * BƯỚC 3: Chuyển đổi ngày âm lịch đã xác định sang ngày dương lịch tương ứng
   * BƯỚC 4: Sử dụng ngày dương lịch đó để tạo startTime và endTime
 
+PHÂN BIỆT QUAN TRỌNG - "MÙNG 1 ÂM LỊCH" vs "MÙNG 1 TẾT":
+- "mùng 1 âm lịch" hoặc "mùng 1 âm" = tìm MÙNG 1 ÂM LỊCH GẦN NHẤT trong tương lai (có thể là tháng 10, 11, 12, hoặc tháng 1 năm sau)
+- "mùng 1 Tết" hoặc "mùng 1 Tết Nguyên Đán" = MÙNG 1 THÁNG 1 ÂM LỊCH (Tết Nguyên Đán)
+- KHÔNG BAO GIỜ nhầm lẫn "mùng 1 âm lịch" với "mùng 1 Tết"
+- Ví dụ: Nếu hôm nay là mùng 19 tháng 9 âm và prompt là "mùng 1 âm lịch":
+  * "mùng 1 âm lịch" = mùng 1 tháng 10 âm (tháng tiếp theo, KHÔNG PHẢI tháng 1)
+  * KHÔNG PHẢI mùng 1 tháng 1 âm lịch (Tết)
+
 VÍ DỤ CHI TIẾT - PHẢI LÀM THEO ĐÚNG:
 - Ví dụ 1: Nếu hôm nay là mùng 19 tháng 9 âm và prompt là "ngày mùng 1 âm lịch":
   * Ngày được nhắc đến: mùng 1 (số = 1)
@@ -156,7 +164,8 @@ VÍ DỤ CHI TIẾT - PHẢI LÀM THEO ĐÚNG:
   * → PHẢI tìm mùng 1 tháng 10 âm (tháng tiếp theo)
   * → Chuyển đổi mùng 1 tháng 10 âm năm 2025 sang dương lịch (ví dụ: 20/11/2025)
   * → Tạo startTime và endTime cho ngày 20/11/2025 (ví dụ: 2025-11-20 08:00:00)
-  * → KẾT QUẢ: startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-30
+  * → KẾT QUẢ: startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-30, KHÔNG PHẢI 2026-01-28 (mùng 1 Tết)
+  * → LƯU Ý: "mùng 1 âm lịch" KHÔNG PHẢI "mùng 1 Tết", phải tìm mùng 1 gần nhất (tháng 10), không phải tháng 1
 
 - Ví dụ 2: Nếu hôm nay là mùng 5 tháng 9 âm và prompt là "ngày rằm":
   * Ngày được nhắc đến: rằm = 15 (số = 15)
@@ -208,7 +217,8 @@ VÍ DỤ CỤ THỂ:
     + BƯỚC 3: → PHẢI tìm mùng 1 tháng 10 âm (tháng tiếp theo)
     + BƯỚC 4: Chuyển đổi mùng 1 tháng 10 âm năm 2025 sang ngày dương lịch tương ứng (ví dụ: 20/11/2025)
     + BƯỚC 5: Tạo startTime và endTime cho ngày dương lịch đó (ví dụ: 2025-11-20 08:00:00)
-    + KẾT QUẢ: startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-30
+    + KẾT QUẢ: startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-30, KHÔNG PHẢI 2026-01-28 (mùng 1 Tết)
+    + QUAN TRỌNG: "mùng 1 âm lịch" KHÔNG PHẢI "mùng 1 Tết", phải tìm mùng 1 gần nhất (tháng 10), KHÔNG PHẢI tháng 1
 
 - Nếu prompt là "ngày rằm tôi sẽ đi chợ" và hôm nay là mùng 5 tháng 9 âm:
   * Ngày rằm (15 âm) trong tháng 9 âm chưa đến (vì hôm nay mới mùng 5)
@@ -238,6 +248,11 @@ LƯU Ý QUAN TRỌNG - PHẢI TUÂN THỦ:
     + Nếu ngày hiện tại < ngày được nhắc đến → ngày đó trong tháng hiện tại chưa đến → dùng tháng hiện tại
   * Ví dụ: Hôm nay mùng 19, prompt "mùng 1" → 19 > 1 → mùng 1 tháng này đã qua → dùng mùng 1 tháng sau
   * Ví dụ: Hôm nay mùng 5, prompt "rằm" (15) → 5 < 15 → rằm tháng này chưa đến → dùng rằm tháng này
+- PHÂN BIỆT QUAN TRỌNG:
+  * "mùng 1 âm lịch" hoặc "mùng 1 âm" = tìm MÙNG 1 ÂM LỊCH GẦN NHẤT (có thể là tháng 10, 11, 12, hoặc tháng 1 năm sau)
+  * "mùng 1 Tết" hoặc "mùng 1 Tết Nguyên Đán" = MÙNG 1 THÁNG 1 ÂM LỊCH (Tết Nguyên Đán)
+  * KHÔNG BAO GIỜ nhầm lẫn "mùng 1 âm lịch" với "mùng 1 Tết"
+  * Ví dụ: Hôm nay mùng 19 tháng 9 âm, prompt "mùng 1 âm lịch" → mùng 1 tháng 10 âm (KHÔNG PHẢI tháng 1)
 - "ngày X Tết" = ngày X tháng 12 âm lịch (KHÔNG phải tháng 1 âm lịch)
 - "mùng 1 Tết" = mùng 1 tháng 1 âm lịch (Tết Nguyên Đán)
 - Luôn chuyển đổi ngày âm lịch sang ngày dương lịch trước khi tạo startTime và endTime

@@ -42,11 +42,9 @@ export class AIService {
     }
 
     try {
-      const systemPrompt = this.createDeepseekSystemPrompt();
-      console.log('systemPrompt', systemPrompt);
       const userPrompt = this.createDeepseekUserPrompt(prompt);
 
-      const responseText = await this.callOpenrouterApi(systemPrompt, userPrompt);
+      const responseText = await this.callOpenrouterApi(userPrompt);
       if (!responseText) return this.getGenTodoFallbackResponse(prompt);
 
       const parsed = this.parseDeepseekResponse(responseText, prompt);
@@ -56,7 +54,10 @@ export class AIService {
     }
   }
 
-  private createDeepseekSystemPrompt(): string {
+  private createDeepseekUserPrompt(prompt: string): string {
+    const now = new Date();
+    const currentLunar = DateTime.getCurrentLunarDate();
+    
     return `Bạn là trợ lý AI thông minh chuyên tạo todo list. Nhiệm vụ của bạn là tạo ra các todo item chi tiết và hữu ích dựa trên prompt của người dùng.
 
 Hãy tạo todo với các thông tin sau:
@@ -88,200 +89,91 @@ QUAN TRỌNG VỀ THỜI GIAN - LUÔN ƯỚC LƯỢNG:
 - Luôn sử dụng format ISO: YYYY-MM-DD HH:MM:SS
 - KHÔNG BAO GIỜ để startTime hoặc endTime = null
 
-HỖ TRỢ NGÀY ÂM LỊCH:
-- Khi người dùng nhắc đến ngày âm lịch (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 5 tháng 10 âm", v.v.), bạn PHẢI:
-  1. Nhận diện đó là ngày âm lịch từ prompt
-  2. Sử dụng thông tin ngày âm lịch hiện tại được cung cấp để tính toán
-  3. Chuyển đổi ngày âm lịch sang ngày dương lịch tương ứng
-  4. Trả về startTime và endTime theo ngày dương lịch đã chuyển đổi
-- Ví dụ: Nếu người dùng nói "đi chợ vào mùng 1 âm sắp tới" và hôm nay là ngày 15/9 âm, thì mùng 1 âm sắp tới sẽ là ngày dương lịch tương ứng (ví dụ: 20/10 dương lịch)
-- Luôn ưu tiên tìm ngày âm lịch gần nhất trong tương lai nếu không có tháng cụ thể
-- Nếu có tháng âm lịch cụ thể, sử dụng tháng đó; nếu không, sử dụng tháng âm lịch hiện tại hoặc tháng tiếp theo
-
-Trả về kết quả dưới dạng JSON hợp lệ.`;
-  }
-
-  private createDeepseekUserPrompt(prompt: string): string {
-    const now = new Date();
-    const currentTime = DateTime.format(now);
-    const weekday = DateTime.weekdayVi(now);
-    const currentLunar = DateTime.getCurrentLunarDate();
-    
-    const lunarInfo = currentLunar 
-      ? `- Ngày âm lịch hiện tại: Mùng ${currentLunar.day} tháng ${currentLunar.month} năm ${currentLunar.year}`
-      : '- Ngày âm lịch: Không xác định được';
-
-      console.log('lunarInfo', lunarInfo);
-    
-    return `Dựa trên prompt sau, hãy tạo một todo item chi tiết:
+Dựa trên prompt sau, hãy tạo một todo item chi tiết:
 
 Prompt: "${prompt}"
 
 THÔNG TIN THỜI GIAN HIỆN TẠI:
-- Ngày giờ hiện tại: ${currentTime}
-- Thứ trong tuần: ${weekday}
 - Ngày dương lịch: ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}
+${currentLunar ? `- Ngày âm lịch: Ngày ${currentLunar.day} tháng ${currentLunar.month} năm ${currentLunar.year}` : '- Ngày âm lịch: Không xác định'}
 - Giờ: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}
-${lunarInfo}
 
-QUAN TRỌNG: Khi tạo trường "startTime" và "endTime", hãy tính toán dựa trên:
-1. Thời gian hiện tại đã cho ở trên
-2. Ngữ cảnh của prompt (ví dụ: "tối nay" = 19:00-23:00 hôm nay)
-3. Thời gian cần thiết để hoàn thành công việc (ví dụ: "2 tiếng" = 2 giờ)
-4. Nếu có thời gian cụ thể, tính startTime và endTime
-5. Nếu KHÔNG có thời gian cụ thể, hãy ước lượng thời gian hợp lý dựa trên loại công việc
-6. LUÔN phải có startTime và endTime, không được để null
+QUY TẮC XỬ LÝ NGÀY ÂM LỊCH - QUAN TRỌNG:
 
-XỬ LÝ NGÀY ÂM LỊCH - QUAN TRỌNG:
-- Khi prompt nhắc đến ngày âm lịch (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 5 tháng 10 âm", "mùng 1 âm tháng sau", v.v.):
-  1. Nhận diện ngày âm lịch từ prompt (ngày, tháng nếu có)
-  2. Tính toán ngày âm lịch sắp tới dựa trên ngày âm lịch hiện tại đã cho ở trên
-  3. Chuyển đổi ngày âm lịch đó sang ngày dương lịch tương ứng
-  4. Sử dụng ngày dương lịch đã chuyển đổi để tạo startTime và endTime
+⚠️ QUAN TRỌNG NHẤT: KẾT QUẢ TRẢ VỀ PHẢI LÀ NGÀY DƯƠNG LỊCH, KHÔNG PHẢI NGÀY ÂM LỊCH ⚠️
 
-QUY TẮC TÌM NGÀY ÂM LỊCH GẦN NHẤT - ĐẶC BIỆT QUAN TRỌNG:
-- Khi prompt chỉ nhắc đến ngày âm lịch mà KHÔNG có tháng cụ thể (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 1 âm lịch", "mùng 5 âm lịch"), bạn PHẢI tìm ngày âm lịch GẦN NHẤT trong TƯƠNG LAI (KHÔNG PHẢI quá khứ):
-  * BƯỚC 1: So sánh SỐ NGÀY được nhắc đến với SỐ NGÀY hiện tại (chỉ so sánh số, không so sánh tháng)
-  * BƯỚC 2: Xác định tháng:
-    - Nếu SỐ NGÀY hiện tại > SỐ NGÀY được nhắc đến → ngày đó trong tháng hiện tại ĐÃ QUA → phải dùng THÁNG TIẾP THEO
-    - Nếu SỐ NGÀY hiện tại < SỐ NGÀY được nhắc đến → ngày đó trong tháng hiện tại CHƯA ĐẾN → dùng THÁNG HIỆN TẠI
-  * BƯỚC 3: Chuyển đổi ngày âm lịch đã xác định sang ngày dương lịch tương ứng
-  * BƯỚC 4: VERIFY ngày dương lịch phải TRONG TƯƠNG LAI (sau ngày hiện tại), KHÔNG PHẢI quá khứ
-  * BƯỚC 5: Nếu ngày dương lịch là quá khứ → phải tìm tháng tiếp theo và chuyển đổi lại
-  * BƯỚC 6: Sử dụng ngày dương lịch đó để tạo startTime và endTime
+Khi prompt nhắc đến ngày âm lịch, bạn PHẢI:
+1. Nhận diện ngày âm lịch từ prompt (ngày, tháng nếu có)
+2. Xác định ngày âm lịch cụ thể (ngày, tháng, năm)
+3. CHUYỂN ĐỔI BẮT BUỘC: Ngày âm lịch đó PHẢI được chuyển đổi sang ngày dương lịch tương ứng
+4. Sử dụng ngày dương lịch đã chuyển đổi để tạo startTime và endTime
+5. KHÔNG BAO GIỜ dùng trực tiếp ngày dương lịch hiện tại khi prompt nhắc đến ngày âm lịch
+6. KHÔNG BAO GIỜ trả về ngày âm lịch trong startTime và endTime - PHẢI là ngày dương lịch
 
-PHÂN BIỆT QUAN TRỌNG - "MÙNG 1 ÂM LỊCH" vs "MÙNG 1 TẾT":
-- "mùng 1 âm lịch" hoặc "mùng 1 âm" = tìm MÙNG 1 ÂM LỊCH GẦN NHẤT trong tương lai (có thể là tháng 10, 11, 12, hoặc tháng 1 năm sau)
-- "mùng 1 Tết" hoặc "mùng 1 Tết Nguyên Đán" = MÙNG 1 THÁNG 1 ÂM LỊCH (Tết Nguyên Đán)
-- KHÔNG BAO GIỜ nhầm lẫn "mùng 1 âm lịch" với "mùng 1 Tết"
-- Ví dụ: Nếu hôm nay là mùng 19 tháng 9 âm và prompt là "mùng 1 âm lịch":
-  * "mùng 1 âm lịch" = mùng 1 tháng 10 âm (tháng tiếp theo, KHÔNG PHẢI tháng 1)
-  * KHÔNG PHẢI mùng 1 tháng 1 âm lịch (Tết)
+1. KHI PROMPT CÓ CẢ THÁNG VÀ NGÀY ÂM LỊCH (ví dụ: "ngày 6 tháng 11 âm lịch"):
+   - "tháng X âm lịch" = tháng X âm lịch, KHÔNG PHẢI tháng X dương lịch
+   - Xác định năm: So sánh tháng được nhắc đến với tháng hiện tại
+     * Tháng nhắc đến > tháng hiện tại → dùng năm hiện tại
+     * Tháng nhắc đến < tháng hiện tại → dùng năm tiếp theo
+     * Tháng nhắc đến = tháng hiện tại → so sánh ngày để xác định năm
+   - CHUYỂN ĐỔI BẮT BUỘC: Ngày X tháng Y âm lịch năm Z → PHẢI chuyển đổi sang ngày dương lịch tương ứng
+   - Sử dụng ngày dương lịch đã chuyển đổi để tạo startTime và endTime
+   - Ví dụ: Hôm nay 9/11/2025 (Ngày 19 tháng 9 âm), prompt "ngày 6 tháng 11 âm lịch" → 11 > 9 → năm 2025 → ngày 6 tháng 11 âm năm 2025 = 25/12/2025 (dương lịch) → startTime = 2025-12-25 08:00:00
 
-VÍ DỤ CHI TIẾT - PHẢI LÀM THEO ĐÚNG:
-- Ví dụ 1: Nếu hôm nay là mùng 19 tháng 9 âm (9/11/2025) và prompt là "ngày mùng 1 âm lịch":
-  * Ngày được nhắc đến: mùng 1 (số = 1)
-  * Ngày hiện tại: mùng 19 (số = 19)
-  * So sánh SỐ: 19 > 1 → mùng 1 tháng 9 âm ĐÃ QUA rồi
-  * → PHẢI tìm mùng 1 tháng 10 âm (tháng tiếp theo)
-  * → Chuyển đổi mùng 1 tháng 10 âm năm 2025 sang dương lịch (ví dụ: 20/11/2025)
-  * → VERIFY: 20/11/2025 > 9/11/2025 (ngày hiện tại) → ĐÚNG, trong tương lai
-  * → Tạo startTime và endTime cho ngày 20/11/2025 (ví dụ: 2025-11-20 08:00:00)
-  * → KẾT QUẢ: startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-30, KHÔNG PHẢI 2026-01-28 (mùng 1 Tết)
-  * → LƯU Ý: "mùng 1 âm lịch" KHÔNG PHẢI "mùng 1 Tết", phải tìm mùng 1 gần nhất (tháng 10), không phải tháng 1
+2. KHI PROMPT CHỈ CÓ NGÀY ÂM LỊCH (ví dụ: "mùng 1 âm", "ngày rằm", "mùng 5 âm lịch"):
+   - Tìm ngày GẦN NHẤT trong TƯƠNG LAI (KHÔNG PHẢI quá khứ)
+   - So sánh SỐ NGÀY: Nếu ngày hiện tại > ngày nhắc đến → dùng tháng tiếp theo, ngược lại → dùng tháng hiện tại
+   - CHUYỂN ĐỔI BẮT BUỘC: Ngày X tháng Y âm lịch năm Z → PHẢI chuyển đổi sang ngày dương lịch tương ứng
+   - Sử dụng ngày dương lịch đã chuyển đổi để tạo startTime và endTime
+   - PHẢI verify ngày dương lịch trong tương lai
+   - Ví dụ: Hôm nay 9/11/2025 (Ngày 19 tháng 9 âm), prompt "mùng 1 âm lịch" → 19 > 1 → mùng 1 tháng 10 âm năm 2025 = 20/11/2025 (dương lịch) → startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-10
 
-- Ví dụ 4: Nếu hôm nay là mùng 19 tháng 9 âm (9/11/2025) và prompt là "mùng 5 âm lịch giỗ ông nội":
-  * Ngày được nhắc đến: mùng 5 (số = 5)
-  * Ngày hiện tại: mùng 19 (số = 19)
-  * So sánh SỐ: 19 > 5 → mùng 5 tháng 9 âm ĐÃ QUA rồi
-  * → PHẢI tìm mùng 5 tháng 10 âm (tháng tiếp theo)
-  * → Chuyển đổi mùng 5 tháng 10 âm năm 2025 sang dương lịch (ví dụ: 24/11/2025)
-  * → VERIFY: 24/11/2025 > 9/11/2025 (ngày hiện tại) → ĐÚNG, trong tương lai
-  * → Tạo startTime và endTime cho ngày 24/11/2025 (ví dụ: 2025-11-24 08:00:00)
-  * → KẾT QUẢ: startTime = 2025-11-24 08:00:00, KHÔNG PHẢI 2025-10-26 (quá khứ)
-  * → QUAN TRỌNG: Ngày dương lịch PHẢI trong tương lai, KHÔNG PHẢI quá khứ
+3. PHÂN BIỆT QUAN TRỌNG - "MÙNG X TẾT" vs "NGÀY X TẾT":
+   - "mùng 1 âm lịch" = mùng 1 gần nhất (có thể tháng 10, 11, 12, hoặc tháng 1 năm sau)
+   - "mùng 1 Tết" = mùng 1 tháng 1 âm lịch (Tết Nguyên Đán)
+   - "mùng X Tết" (với X > 1, ví dụ: "mùng 2 Tết", "mùng 3 Tết", "mùng 5 Tết") = mùng X tháng 1 âm lịch (sau Tết Nguyên Đán)
+   - "ngày X Tết" (không có "mùng", ví dụ: "ngày 28 Tết", "ngày 30 Tết") = ngày X tháng 12 âm lịch (trước Tết Nguyên Đán)
+   - Ví dụ: "mùng 3 Tết" = mùng 3 tháng 1 âm lịch (KHÔNG PHẢI mùng 3 tháng 12 âm lịch)
+     * Hôm nay 9/11/2025 (Ngày 19 tháng 9 âm), prompt "mùng 3 Tết" → mùng 3 tháng 1 âm lịch năm 2026 = 19/2/2026 (dương lịch) → startTime = 2026-02-19 08:00:00
+   - Ví dụ: "ngày 28 Tết" = ngày 28 tháng 12 âm lịch (KHÔNG PHẢI ngày 28 tháng 1 âm lịch)
 
-- Ví dụ 2: Nếu hôm nay là mùng 5 tháng 9 âm và prompt là "ngày rằm":
-  * Ngày được nhắc đến: rằm = 15 (số = 15)
-  * Ngày hiện tại: mùng 5 (số = 5)
-  * So sánh SỐ: 5 < 15 → ngày rằm (15 âm) trong tháng 9 âm CHƯA ĐẾN
-  * → Sử dụng ngày rằm tháng 9 âm (tháng hiện tại)
-  * → Chuyển đổi mùng 15 tháng 9 âm sang dương lịch tương ứng
-  * → Tạo startTime và endTime cho ngày dương lịch đó
+4. NHẬN DIỆN CÁC NGÀY LỄ ÂM LỊCH CỦA VIỆT NAM:
+   Khi prompt nhắc đến tên ngày lễ, bạn PHẢI:
+   1. Nhận diện ngày âm lịch tương ứng với ngày lễ
+   2. CHUYỂN ĐỔI BẮT BUỘC sang ngày dương lịch tương ứng
+   3. Sử dụng ngày dương lịch đã chuyển đổi để tạo startTime và endTime
+   4. KHÔNG BAO GIỜ trả về ngày âm lịch trong kết quả
+   
+   Danh sách ngày lễ:
+   - "Tết Nguyên Đán" hoặc "Tết" = mùng 1 tháng 1 âm lịch → chuyển đổi sang ngày dương lịch
+   - "Tết Nguyên Tiêu" hoặc "Rằm tháng Giêng" = rằm tháng 1 âm lịch (15/1 âm) → chuyển đổi sang ngày dương lịch
+   - "Tết Hàn Thực" = mùng 3 tháng 3 âm lịch → chuyển đổi sang ngày dương lịch
+   - "Tết Thanh Minh" = thường vào tháng 3 âm lịch (khoảng 4-6/3 âm) → chuyển đổi sang ngày dương lịch
+   - "Giỗ Tổ Hùng Vương" = 10 tháng 3 âm lịch → chuyển đổi sang ngày dương lịch
+   - "Tết Đoan Ngọ" hoặc "Tết Đoan Dương" = mùng 5 tháng 5 âm lịch → chuyển đổi sang ngày dương lịch
+   - "Lễ Vu Lan" hoặc "Rằm tháng Bảy" = rằm tháng 7 âm lịch (15/7 âm) → chuyển đổi sang ngày dương lịch
+   - "Tết Trung Thu" hoặc "Rằm tháng Tám" = rằm tháng 8 âm lịch (15/8 âm) → chuyển đổi sang ngày dương lịch
+   - "Tết Trùng Cửu" = mùng 9 tháng 9 âm lịch → chuyển đổi sang ngày dương lịch
+   - "Tết Ông Táo" hoặc "Ông Táo về trời" = 23 tháng 12 âm lịch → chuyển đổi sang ngày dương lịch
+   - "Rằm tháng X" = 15 tháng X âm lịch (X là số tháng) → chuyển đổi sang ngày dương lịch
+   - "Mùng X tháng Y" = ngày X tháng Y âm lịch → chuyển đổi sang ngày dương lịch
+   
+   ⚠️ LƯU Ý: Sau khi nhận diện ngày lễ âm lịch, PHẢI chuyển đổi sang ngày dương lịch tương ứng và sử dụng ngày dương lịch đó trong startTime và endTime. KHÔNG BAO GIỜ trả về ngày âm lịch.
 
-- Ví dụ 3: Nếu hôm nay là mùng 25 tháng 9 âm và prompt là "mùng 1 âm":
-  * Ngày được nhắc đến: mùng 1 (số = 1)
-  * Ngày hiện tại: mùng 25 (số = 25)
-  * So sánh SỐ: 25 > 1 → mùng 1 tháng 9 âm ĐÃ QUA rồi
-  * → PHẢI tìm mùng 1 tháng 10 âm (tháng tiếp theo)
-  * → Chuyển đổi mùng 1 tháng 10 âm sang dương lịch
+5. LUÔN verify ngày dương lịch phải TRONG TƯƠNG LAI sau khi chuyển đổi
+6. Format: YYYY-MM-DD HH:MM:SS (ví dụ: 2025-11-20 08:00:00)
+7. LUÔN phải có startTime và endTime, không được để null
 
-XỬ LÝ TẾT NGUYÊN ĐÁN - ĐẶC BIỆT QUAN TRỌNG:
-- "Tết nguyên đán" hoặc "Tết Nguyên Đán" = Tết Nguyên Đán (mùng 1 tháng 1 âm lịch)
-- "ngày X Tết" hoặc "X Tết" = ngày X tháng 12 âm lịch (tháng cuối cùng của năm âm lịch, trước Tết)
-- Ví dụ: "ngày 28 Tết" = ngày 28 tháng 12 âm lịch (không phải ngày 28 tháng 1 âm lịch)
-- Ví dụ: "ngày 30 Tết" = ngày 30 tháng 12 âm lịch (ngày cuối cùng của năm âm lịch)
-- Ví dụ: "mùng 1 Tết" = mùng 1 tháng 1 âm lịch (Tết Nguyên Đán)
-- Lưu ý: Nếu năm âm lịch hiện tại là năm X, thì "ngày X Tết" sẽ là ngày X tháng 12 âm lịch năm X (nếu chưa qua Tết) hoặc năm X+1 (nếu đã qua Tết)
+⚠️ NHẮC LẠI QUAN TRỌNG: 
+- Khi prompt nhắc đến ngày âm lịch hoặc ngày lễ âm lịch, PHẢI chuyển đổi sang ngày dương lịch tương ứng
+- startTime và endTime PHẢI là ngày dương lịch (format: YYYY-MM-DD HH:MM:SS)
+- KHÔNG BAO GIỜ trả về ngày âm lịch trong startTime và endTime
+- Ví dụ: "Tết Trung Thu" → rằm tháng 8 âm lịch → chuyển đổi sang ngày dương lịch (ví dụ: 2025-10-06) → startTime = 2025-10-06 08:00:00
 
-VÍ DỤ CỤ THỂ:
-- Nếu prompt là "Mùng 1 âm tháng sau sẽ về quê" và hôm nay là:
-  * Ngày dương lịch: 8/11/2025
-  * Ngày âm lịch: Mùng 19 tháng 9 năm 2025
-  * Thì bạn phải tính:
-    + "Mùng 1 âm tháng sau" = Mùng 1 tháng (9+1) = Mùng 1 tháng 10 âm năm 2025
-    + Chuyển đổi Mùng 1 tháng 10 âm năm 2025 sang ngày dương lịch tương ứng (ví dụ: 20/11/2025)
-    + Tạo startTime và endTime cho ngày dương lịch đó (ví dụ: 2025-11-20 08:00:00)
-
-- Nếu prompt là "ngày 28 Tết nguyên đán tôi sẽ về quê" và hôm nay là:
-  * Ngày dương lịch: 8/11/2025
-  * Ngày âm lịch: Mùng 19 tháng 9 năm 2025
-  * Thì bạn phải tính:
-    + "ngày 28 Tết" = ngày 28 tháng 12 âm lịch (tháng cuối cùng trước Tết)
-    + Vì hôm nay là tháng 9 âm, nên "ngày 28 Tết" sẽ là ngày 28 tháng 12 âm lịch năm 2025
-    + Chuyển đổi ngày 28 tháng 12 âm lịch năm 2025 sang ngày dương lịch tương ứng (ví dụ: 15/2/2026)
-    + Tạo startTime và endTime cho ngày dương lịch đó (ví dụ: 2026-02-15 08:00:00)
-
-- Nếu prompt là "ngày mùng 1 âm lịch tôi sẽ về quê" và hôm nay là:
-  * Ngày dương lịch: 8/11/2025
-  * Ngày âm lịch: Mùng 19 tháng 9 năm 2025
-  * Thì bạn PHẢI tính theo đúng quy tắc:
-    + BƯỚC 1: Ngày được nhắc đến = mùng 1 (số = 1), Ngày hiện tại = mùng 19 (số = 19)
-    + BƯỚC 2: So sánh SỐ: 19 > 1 → mùng 1 tháng 9 âm ĐÃ QUA rồi
-    + BƯỚC 3: → PHẢI tìm mùng 1 tháng 10 âm (tháng tiếp theo)
-    + BƯỚC 4: Chuyển đổi mùng 1 tháng 10 âm năm 2025 sang ngày dương lịch tương ứng (ví dụ: 20/11/2025)
-    + BƯỚC 5: Tạo startTime và endTime cho ngày dương lịch đó (ví dụ: 2025-11-20 08:00:00)
-    + KẾT QUẢ: startTime = 2025-11-20 08:00:00, KHÔNG PHẢI 2025-11-30, KHÔNG PHẢI 2026-01-28 (mùng 1 Tết)
-    + QUAN TRỌNG: "mùng 1 âm lịch" KHÔNG PHẢI "mùng 1 Tết", phải tìm mùng 1 gần nhất (tháng 10), KHÔNG PHẢI tháng 1
-
-- Nếu prompt là "ngày rằm tôi sẽ đi chợ" và hôm nay là mùng 5 tháng 9 âm:
-  * Ngày rằm (15 âm) trong tháng 9 âm chưa đến (vì hôm nay mới mùng 5)
-  * → Sử dụng ngày rằm tháng 9 âm (tháng hiện tại)
-  * → Chuyển đổi mùng 15 tháng 9 âm sang ngày dương lịch tương ứng
-  * Tạo startTime và endTime cho ngày dương lịch đó
-
-- Nếu prompt là "đi chợ vào mùng 1 âm sắp tới" và hôm nay là mùng 15 tháng 9 âm:
-  * Mùng 1 âm sắp tới = mùng 1 tháng 10 âm (vì mùng 1 tháng 9 đã qua)
-  * Chuyển đổi mùng 1 tháng 10 âm sang ngày dương lịch (ví dụ: 20/11/2025)
-  * Tạo startTime và endTime cho ngày 20/11/2025
-
-- Nếu prompt là "cúng rằm vào ngày 15 âm tháng này" và hôm nay là mùng 10 tháng 9 âm:
-  * Ngày 15 âm tháng này = mùng 15 tháng 9 âm
-  * Chuyển đổi mùng 15 tháng 9 âm sang ngày dương lịch tương ứng
-  * Tạo startTime và endTime cho ngày dương lịch đó
-
-LƯU Ý QUAN TRỌNG - PHẢI TUÂN THỦ:
-- "Tháng sau" trong âm lịch = tháng âm lịch hiện tại + 1
-- "Tháng này" trong âm lịch = tháng âm lịch hiện tại
-- "Sắp tới" = tìm ngày âm lịch gần nhất trong tương lai
-- Khi prompt chỉ có ngày âm lịch KHÔNG có tháng (ví dụ: "mùng 1 âm", "ngày rằm", "15 âm", "mùng 1 âm lịch", "mùng 5 âm lịch"):
-  * PHẢI tìm ngày âm lịch GẦN NHẤT trong TƯƠNG LAI (KHÔNG PHẢI quá khứ)
-  * QUY TẮC SO SÁNH:
-    + So sánh SỐ NGÀY được nhắc đến với SỐ NGÀY hiện tại
-    + Nếu ngày hiện tại > ngày được nhắc đến → ngày đó trong tháng hiện tại đã qua → dùng tháng tiếp theo
-    + Nếu ngày hiện tại < ngày được nhắc đến → ngày đó trong tháng hiện tại chưa đến → dùng tháng hiện tại
-  * QUY TẮC VERIFY:
-    + Sau khi chuyển đổi sang dương lịch, PHẢI verify ngày đó TRONG TƯƠNG LAI (sau ngày hiện tại)
-    + Nếu ngày dương lịch là QUÁ KHỨ → PHẢI tìm tháng tiếp theo và chuyển đổi lại
-    + KHÔNG BAO GIỜ trả về ngày trong quá khứ
-  * Ví dụ: Hôm nay mùng 19, prompt "mùng 1" → 19 > 1 → mùng 1 tháng này đã qua → dùng mùng 1 tháng sau
-  * Ví dụ: Hôm nay mùng 5, prompt "rằm" (15) → 5 < 15 → rằm tháng này chưa đến → dùng rằm tháng này
-  * Ví dụ: Hôm nay 9/11/2025 (mùng 19 tháng 9 âm), prompt "mùng 5 âm lịch" → 19 > 5 → mùng 5 tháng 9 đã qua → dùng mùng 5 tháng 10 → verify: 24/11/2025 > 9/11/2025 → ĐÚNG
-- PHÂN BIỆT QUAN TRỌNG:
-  * "mùng 1 âm lịch" hoặc "mùng 1 âm" = tìm MÙNG 1 ÂM LỊCH GẦN NHẤT (có thể là tháng 10, 11, 12, hoặc tháng 1 năm sau)
-  * "mùng 1 Tết" hoặc "mùng 1 Tết Nguyên Đán" = MÙNG 1 THÁNG 1 ÂM LỊCH (Tết Nguyên Đán)
-  * KHÔNG BAO GIỜ nhầm lẫn "mùng 1 âm lịch" với "mùng 1 Tết"
-  * Ví dụ: Hôm nay mùng 19 tháng 9 âm, prompt "mùng 1 âm lịch" → mùng 1 tháng 10 âm (KHÔNG PHẢI tháng 1)
-- "ngày X Tết" = ngày X tháng 12 âm lịch (KHÔNG phải tháng 1 âm lịch)
-- "mùng 1 Tết" = mùng 1 tháng 1 âm lịch (Tết Nguyên Đán)
-- Luôn chuyển đổi ngày âm lịch sang ngày dương lịch trước khi tạo startTime và endTime
-- Format: YYYY-MM-DD HH:MM:SS (ví dụ: 2025-11-20 08:00:00)
-- QUAN TRỌNG: Phải tính toán CHÍNH XÁC, không được ước lượng hoặc đoán mò
-
-Hãy phân tích và tạo todo với thông tin đầy đủ, thực tế và hữu ích.`;
+Trả về kết quả dưới dạng JSON hợp lệ.`;
   }
 
-  private async callOpenrouterApi(systemPrompt: string, userPrompt: string): Promise<string> {
+  private async callOpenrouterApi(userPrompt: string): Promise<string> {
     const headers = {
       Authorization: `Bearer ${this.openrouterApiKey}`,
       'Content-Type': 'application/json',
@@ -292,7 +184,6 @@ Hãy phân tích và tạo todo với thông tin đầy đủ, thực tế và h
     const payload = {
       model: this.deepseekModel,
       messages: [
-        { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       max_tokens: this.maxTokens,

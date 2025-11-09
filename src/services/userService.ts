@@ -2,6 +2,7 @@ import pool from '../config/database.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { Todo, CreateTodoData } from '../models/Todo.js';
+import { DateTime } from '../utils/datetime.js';
 
 export type ListTodosOptions = {
   startFrom?: Date;
@@ -59,11 +60,24 @@ export const getUserTodos = async (userId: number, opts: ListTodosOptions = {}):
 
   const [todos] = await pool.execute(sql, values);
 
-  return (todos as any[]).map(todo => ({
-    ...todo,
-    labels: todo.labels ? JSON.parse(todo.labels) : null
-  }));
+  return (todos as any[]).map(todo => formatTodoResponse(todo));
 };
+
+/**
+ * Format todo response with timestamp (milliseconds) instead of Date objects
+ * All timestamps are in milliseconds and should be interpreted as Vietnam timezone (UTC+7)
+ */
+function formatTodoResponse(todo: any): any {
+  return {
+    ...todo,
+    start_time: DateTime.toTimestamp(todo.start_time),
+    end_time: DateTime.toTimestamp(todo.end_time),
+    due: DateTime.toTimestamp(todo.due),
+    created_at: DateTime.toTimestamp(todo.created_at),
+    updated_at: DateTime.toTimestamp(todo.updated_at),
+    labels: todo.labels ? JSON.parse(todo.labels) : null
+  };
+}
 
 export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
   const [result] = await pool.execute(
@@ -88,10 +102,7 @@ export const createTodo = async (todoData: CreateTodoData): Promise<Todo> => {
   const [todos] = await pool.execute('SELECT * FROM todos WHERE id = ?', [todoId]);
   
   const todo = (todos as any[])[0];
-  return {
-    ...todo,
-    labels: todo.labels ? JSON.parse(todo.labels) : null
-  } as Todo;
+  return formatTodoResponse(todo) as Todo;
 };
 
 export const updateTodo = async (todoId: number, todoData: any, userId: number): Promise<Todo> => {
@@ -178,10 +189,7 @@ export const updateTodo = async (todoId: number, todoData: any, userId: number):
   );
   
   const todo = (updatedTodos as any[])[0];
-  return {
-    ...todo,
-    labels: todo.labels ? JSON.parse(todo.labels) : null
-  } as Todo;
+  return formatTodoResponse(todo) as Todo;
 };
 
 export const deleteTodo = async (todoId: number, userId: number): Promise<Todo> => {
@@ -204,8 +212,5 @@ export const deleteTodo = async (todoId: number, userId: number): Promise<Todo> 
   );
   
   // Return the deleted todo data
-  return {
-    ...todo,
-    labels: todo.labels ? JSON.parse(todo.labels) : null
-  } as Todo;
+  return formatTodoResponse(todo) as Todo;
 };

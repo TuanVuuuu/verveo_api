@@ -63,6 +63,25 @@ export class DateTime {
       return null;
     }
   }
+
+  /**
+   * Convert Date to timestamp (milliseconds)
+   * Timestamp is universal and represents milliseconds since epoch (UTC)
+   * When displaying, it should be interpreted as Vietnam timezone (UTC+7)
+   */
+  static toTimestamp(date: Date | null | undefined): number | null {
+    if (!date) return null;
+    return date.getTime();
+  }
+
+  /**
+   * Parse timestamp (milliseconds) to Date object
+   * Timestamp is universal, but when creating Date, it will be interpreted correctly
+   */
+  static fromTimestamp(timestamp: number | null | undefined): Date | null {
+    if (!timestamp) return null;
+    return new Date(timestamp);
+  }
 }
 
 

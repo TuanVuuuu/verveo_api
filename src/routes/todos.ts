@@ -5,6 +5,7 @@ import { getUserTodos, createTodo, updateTodo, deleteTodo, ListTodosOptions } fr
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { AIService } from '../services/aiService.js';
+import { DateTime } from '../utils/datetime.js';
 
 const router = express.Router();
 const aiService = new AIService();
@@ -16,9 +17,9 @@ const GenTodoRequest = z.object({
 const UpdateTodoRequest = z.object({
   title: z.string().min(1).optional(),
   description: z.string().optional(),
-  start_time: z.string().datetime().optional(),
-  end_time: z.string().datetime().optional(),
-  due: z.string().datetime().optional(),
+  start_time: z.union([z.string(), z.number()]).optional(), // Accept timestamp (number) or datetime string
+  end_time: z.union([z.string(), z.number()]).optional(), // Accept timestamp (number) or datetime string
+  due: z.union([z.string(), z.number()]).optional(), // Accept timestamp (number) or datetime string
   labels: z.any().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   message: z.string().optional(),
@@ -71,9 +72,9 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
     const todoResponse = {
       title: aiResult.title,
       description: aiResult.description,
-      start_time: aiResult.startTime ? new Date(aiResult.startTime).toISOString() : undefined,
-      end_time: aiResult.endTime ? new Date(aiResult.endTime).toISOString() : undefined,
-      due: aiResult.startTime ? new Date(aiResult.startTime).toISOString() : undefined,
+      start_time: aiResult.startTime ? DateTime.toTimestamp(new Date(aiResult.startTime)) : null,
+      end_time: aiResult.endTime ? DateTime.toTimestamp(new Date(aiResult.endTime)) : null,
+      due: aiResult.startTime ? DateTime.toTimestamp(new Date(aiResult.startTime)) : null,
       labels: aiResult.labels || undefined,
       priority: aiResult.priority || 'medium',
       message: aiResult.message,
@@ -100,13 +101,30 @@ router.post('/create-manual', authenticateToken, async (req: Request, res: Respo
     if (!payload.title) {
       return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
     }
+    
+    // Parse timestamp or datetime string to Date
+    const parseDateTime = (v?: string | number): Date | undefined => {
+      if (v === undefined || v === null) return undefined;
+      // If it's a number (timestamp), parse it
+      if (typeof v === 'number') {
+        return new Date(v >= 1e12 ? v : v * 1000); // Support both seconds and milliseconds
+      }
+      // If it's a string, try to parse as number first
+      const n = Number(v);
+      if (!isNaN(n) && isFinite(n)) {
+        return new Date(n >= 1e12 ? n : n * 1000); // Support both seconds and milliseconds
+      }
+      // Otherwise, parse as ISO string
+      return new Date(v);
+    };
+    
     const savedTodo = await createTodo({
       user_id: userId,
       title: payload.title,
       description: payload.description,
-      start_time: payload.start_time ? new Date(payload.start_time) : undefined,
-      end_time: payload.end_time ? new Date(payload.end_time) : undefined,
-      due: payload.due ? new Date(payload.due) : payload.start_time ? new Date(payload.start_time) : undefined,
+      start_time: parseDateTime(payload.start_time),
+      end_time: parseDateTime(payload.end_time),
+      due: parseDateTime(payload.due) || parseDateTime(payload.start_time),
       labels: (payload as any).labels || undefined,
       priority: payload.priority || 'medium',
       message: payload.message,
@@ -129,11 +147,28 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response, next: 
       return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
     }
     const payload = parse.data;
+    
+    // Parse timestamp or datetime string to Date
+    const parseDateTime = (v?: string | number): Date | undefined => {
+      if (v === undefined || v === null) return undefined;
+      // If it's a number (timestamp), parse it
+      if (typeof v === 'number') {
+        return new Date(v >= 1e12 ? v : v * 1000); // Support both seconds and milliseconds
+      }
+      // If it's a string, try to parse as number first
+      const n = Number(v);
+      if (!isNaN(n) && isFinite(n)) {
+        return new Date(n >= 1e12 ? n : n * 1000); // Support both seconds and milliseconds
+      }
+      // Otherwise, parse as ISO string
+      return new Date(v);
+    };
+    
     const todoData = {
       ...payload,
-      start_time: payload.start_time ? new Date(payload.start_time) : undefined,
-      end_time: payload.end_time ? new Date(payload.end_time) : undefined,
-      due: payload.due ? new Date(payload.due) : undefined
+      start_time: parseDateTime(payload.start_time),
+      end_time: parseDateTime(payload.end_time),
+      due: parseDateTime(payload.due)
     };
     const updated = await updateTodo(todoId, todoData as any, userId);
     res.json(updated);

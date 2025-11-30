@@ -2,6 +2,12 @@
 
 ## [2.0.6] - 2025-01-XX
 ### Added
+- POST `/todos/batch_import`: Batch import multiple todos in a single API call
+  - Supports creating 1-100 todos in one request
+  - Uses database transaction for all-or-nothing behavior
+  - Helps users synchronize data efficiently without multiple API calls
+  - Same todo structure as `POST /todos/create-manual` but accepts array of todos
+- `createTodosBatch` function in `userService.ts` for batch todo creation with transaction support
 - Lunar calendar support in `generateTodoWithDeepseek`
 - Automatic conversion from lunar calendar dates to solar calendar dates
 - Utility functions for lunar calendar conversion (`convertLunarToSolar`, `getCurrentLunarDate`)
@@ -13,8 +19,14 @@
 - Enhanced AI prompts to understand and process lunar calendar dates
 - System prompt now includes instructions for handling lunar calendar dates
 - User prompt now includes current lunar calendar date information
+- Enhanced todo creation workflow with batch import capability
+- Improved data synchronization support for client applications
 
 ### Technical Details
+- Batch import uses MySQL transactions to ensure data consistency
+- If any todo creation fails, entire batch is rolled back
+- Response returns array of created todos in the same order as request
+- Each todo in batch gets `created_by="User"`, `confidence=1`, `progress="todo"` by default
 - When user mentions lunar calendar dates (e.g., "mùng 1 âm", "ngày rằm", "15 âm"), AI will:
   1. Recognize the lunar calendar date from the prompt
   2. Calculate the corresponding solar calendar date

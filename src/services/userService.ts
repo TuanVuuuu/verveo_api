@@ -214,3 +214,50 @@ export const deleteTodo = async (todoId: number, userId: number): Promise<Todo> 
   // Return the deleted todo data
   return formatTodoResponse(todo) as Todo;
 };
+
+export const createTodosBatch = async (todosData: CreateTodoData[]): Promise<Todo[]> => {
+  if (todosData.length === 0) {
+    return [];
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const todoIds: number[] = [];
+    const insertSql = 'INSERT INTO todos (user_id, title, description, start_time, end_time, due, labels, priority, message, confidence, created_by, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    
+    for (const todo of todosData) {
+      const [result] = await connection.query(insertSql, [
+        todo.user_id,
+        todo.title,
+        todo.description ?? null,
+        todo.start_time ?? null,
+        todo.end_time ?? null,
+        todo.due ?? null,
+        todo.labels ? JSON.stringify(todo.labels) : null,
+        todo.priority ?? 'medium',
+        todo.message ?? null,
+        todo.confidence ?? null,
+        todo.created_by ?? null,
+        todo.progress || 'todo'
+      ]);
+      todoIds.push((result as any).insertId);
+    }
+
+    const placeholders = todoIds.map(() => '?').join(',');
+    const [createdTodos] = await connection.query(
+      `SELECT * FROM todos WHERE id IN (${placeholders}) ORDER BY id ASC`,
+      todoIds
+    );
+
+    await connection.commit();
+
+    return (createdTodos as any[]).map(todo => formatTodoResponse(todo));
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};

@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticateToken } from '../middleware/auth.js';
-import { getUserTodos, createTodo, updateTodo, deleteTodo, ListTodosOptions } from '../services/userService.js';
+import { getUserTodos, createTodo, updateTodo, deleteTodo, createTodosBatch, ListTodosOptions } from '../services/userService.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { AIService } from '../services/aiService.js';
@@ -29,6 +29,10 @@ const UpdateTodoRequest = z.object({
 });
 
 // Reuse UpdateTodoRequest for manual creation (title will be checked at runtime)
+
+const BatchImportRequest = z.object({
+  todos: z.array(UpdateTodoRequest).min(1).max(100)
+});
 
 router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -133,6 +137,59 @@ router.post('/create-manual', authenticateToken, async (req: Request, res: Respo
       progress: 'todo'
     });
     res.json(savedTodo);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/batch_import', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const parse = BatchImportRequest.safeParse(req.body);
+    if (!parse.success) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+    const { todos } = parse.data;
+    
+    // Validate all todos have title
+    const invalidTodos = todos.filter(todo => !todo.title);
+    if (invalidTodos.length > 0) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+    
+    // Parse timestamp or datetime string to Date
+    const parseDateTime = (v?: string | number): Date | undefined => {
+      if (v === undefined || v === null) return undefined;
+      // If it's a number (timestamp), parse it
+      if (typeof v === 'number') {
+        return new Date(v >= 1e12 ? v : v * 1000); // Support both seconds and milliseconds
+      }
+      // If it's a string, try to parse as number first
+      const n = Number(v);
+      if (!isNaN(n) && isFinite(n)) {
+        return new Date(n >= 1e12 ? n : n * 1000); // Support both seconds and milliseconds
+      }
+      // Otherwise, parse as ISO string
+      return new Date(v);
+    };
+    
+    const todosData = todos.map(todo => ({
+      user_id: userId,
+      title: todo.title!,
+      description: todo.description,
+      start_time: parseDateTime(todo.start_time),
+      end_time: parseDateTime(todo.end_time),
+      due: parseDateTime(todo.due) || parseDateTime(todo.start_time),
+      labels: (todo as any).labels || undefined,
+      priority: todo.priority || 'medium',
+      message: todo.message,
+      confidence: 1,
+      created_by: 'User',
+      progress: 'todo' as const
+    }));
+    
+    const savedTodos = await createTodosBatch(todosData);
+    res.json(savedTodos);
   } catch (err) {
     next(err);
   }

@@ -64,8 +64,9 @@ export const getUserTodos = async (userId: number, opts: ListTodosOptions = {}):
 };
 
 /**
- * Format todo response with timestamp (milliseconds) instead of Date objects
- * All timestamps are in milliseconds and should be interpreted as Vietnam timezone (UTC+7)
+ * Format todo response with timestamp (milliseconds, UTC-based) instead of Date objects.
+ * All timestamps are milliseconds since Unix epoch (UTC). Client apps must parse them as UTC
+ * (e.g. `DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true).toLocal()` in Flutter).
  */
 function formatTodoResponse(todo: any): any {
   return {
@@ -265,15 +266,26 @@ export const createTodosBatch = async (todosData: CreateTodoData[]): Promise<Tod
 export const getTodoEventDays = async (
   userId: number,
   from: Date,
-  to: Date
+  to: Date,
+  offsetMinutes = 420 // default UTC+7 for backward compatibility
 ): Promise<{ totalTodos: number; eventDays: { date: Date; todoCount: number }[] }> => {
   const [totalRows] = await pool.execute('SELECT COUNT(*) AS totalTodos FROM todos WHERE user_id = ?', [userId]);
   const totalTodos = (totalRows as any[])[0]?.totalTodos ? Number((totalRows as any[])[0].totalTodos) : 0;
 
+  // Build MySQL offset string like "+07:00", "-05:30" from offsetMinutes
+  const totalMinutes = offsetMinutes;
+  const sign = totalMinutes >= 0 ? '+' : '-';
+  const absMinutes = Math.abs(totalMinutes);
+  const hours = Math.floor(absMinutes / 60);
+  const minutes = absMinutes % 60;
+  const offsetStr = `${sign}${hours.toString().padStart(2, '0')}:${minutes
+    .toString()
+    .padStart(2, '0')}`;
+
   const [rows] = await pool.execute(
     `
       SELECT 
-        DATE(CONVERT_TZ(COALESCE(start_time, due), '+00:00', '+07:00')) AS event_date,
+        DATE(CONVERT_TZ(COALESCE(start_time, due), '+00:00', ?)) AS event_date,
         COUNT(*) AS todoCount
       FROM todos
       WHERE user_id = ?
@@ -282,7 +294,7 @@ export const getTodoEventDays = async (
       GROUP BY event_date
       ORDER BY event_date ASC
     `,
-    [userId, from, to]
+    [offsetStr, userId, from, to]
   );
 
   const eventDays = (rows as any[]).map((row) => ({

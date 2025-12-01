@@ -36,7 +36,10 @@ const BatchImportRequest = z.object({
 
 const EventDaysQuery = z.object({
   dateFrom: z.string(),
-  dateTo: z.string()
+  dateTo: z.string(),
+  // Optional timezone offset in minutes (e.g. +420 for UTC+7, -300 for UTC-5).
+  // If not provided, backend will default to UTC+7 for backward compatibility.
+  offsetMinutes: z.string().optional()
 });
 
 router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
@@ -78,7 +81,7 @@ router.get('/event-days', authenticateToken, async (req: Request, res: Response,
       return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
     }
 
-    const { dateFrom, dateTo } = parse.data;
+    const { dateFrom, dateTo, offsetMinutes } = parse.data;
 
     const parseDateTime = (v: string): Date | null => {
       if (!v) return null;
@@ -98,7 +101,8 @@ router.get('/event-days', authenticateToken, async (req: Request, res: Response,
       return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
     }
 
-    const { totalTodos, eventDays } = await getTodoEventDays(userId, from, to);
+    const offset = offsetMinutes !== undefined ? parseInt(offsetMinutes, 10) : 420;
+    const { totalTodos, eventDays } = await getTodoEventDays(userId, from, to, offset);
 
     res.json({
       summary: {

@@ -65,9 +65,9 @@ export class DateTime {
   }
 
   /**
-   * Convert Date to timestamp (milliseconds)
-   * Timestamp is universal and represents milliseconds since epoch (UTC)
-   * When displaying, it should be interpreted as Vietnam timezone (UTC+7)
+   * Convert Date to timestamp (milliseconds, UTC-based)
+   * Timestamp represents milliseconds since Unix epoch (UTC).
+   * Client apps (Flutter/web) MUST parse it as UTC and then convert to local time when displaying.
    */
   static toTimestamp(date: Date | null | undefined): number | null {
     if (!date) return null;
@@ -75,8 +75,9 @@ export class DateTime {
   }
 
   /**
-   * Parse timestamp (milliseconds) to Date object
-   * Timestamp is universal, but when creating Date, it will be interpreted correctly
+   * Parse timestamp (milliseconds) to Date object.
+   * The number is assumed to be milliseconds since Unix epoch (UTC).
+   * When sending to clients, always use DateTime.toTimestamp instead of raw Date objects.
    */
   static fromTimestamp(timestamp: number | null | undefined): Date | null {
     if (!timestamp) return null;

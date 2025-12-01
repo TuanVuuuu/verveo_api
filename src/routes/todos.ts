@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticateToken } from '../middleware/auth.js';
-import { getUserTodos, createTodo, updateTodo, deleteTodo, createTodosBatch, ListTodosOptions } from '../services/userService.js';
+import { getUserTodos, createTodo, updateTodo, deleteTodo, createTodosBatch, getTodoEventDays, ListTodosOptions } from '../services/userService.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { AIService } from '../services/aiService.js';
@@ -34,6 +34,11 @@ const BatchImportRequest = z.object({
   todos: z.array(UpdateTodoRequest).min(1).max(100)
 });
 
+const EventDaysQuery = z.object({
+  dateFrom: z.string(),
+  dateTo: z.string()
+});
+
 router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
@@ -60,6 +65,51 @@ router.get('/', authenticateToken, async (req: Request, res: Response, next: Nex
     };
     const todos = await getUserTodos(userId, opts);
     res.json(todos);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/event-days', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const parse = EventDaysQuery.safeParse(req.query);
+    if (!parse.success) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+
+    const { dateFrom, dateTo } = parse.data;
+
+    const parseDateTime = (v: string): Date | null => {
+      if (!v) return null;
+      const n = Number(v);
+      if (isFinite(n)) {
+        return new Date(n >= 1e12 ? n : n * 1000);
+      }
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return null;
+      return d;
+    };
+
+    const from = parseDateTime(dateFrom);
+    const to = parseDateTime(dateTo);
+
+    if (!from || !to || from > to) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+
+    const { totalTodos, eventDays } = await getTodoEventDays(userId, from, to);
+
+    res.json({
+      summary: {
+        totalTodos,
+        totalEventDaysInQuery: eventDays.length
+      },
+      eventDays: eventDays.map((d) => ({
+        date: d.date.toISOString(),
+        todoCount: d.todoCount
+      }))
+    });
   } catch (err) {
     next(err);
   }

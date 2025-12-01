@@ -261,3 +261,34 @@ export const createTodosBatch = async (todosData: CreateTodoData[]): Promise<Tod
     connection.release();
   }
 };
+
+export const getTodoEventDays = async (
+  userId: number,
+  from: Date,
+  to: Date
+): Promise<{ totalTodos: number; eventDays: { date: Date; todoCount: number }[] }> => {
+  const [totalRows] = await pool.execute('SELECT COUNT(*) AS totalTodos FROM todos WHERE user_id = ?', [userId]);
+  const totalTodos = (totalRows as any[])[0]?.totalTodos ? Number((totalRows as any[])[0].totalTodos) : 0;
+
+  const [rows] = await pool.execute(
+    `
+      SELECT 
+        DATE(CONVERT_TZ(COALESCE(start_time, due), '+00:00', '+07:00')) AS event_date,
+        COUNT(*) AS todoCount
+      FROM todos
+      WHERE user_id = ?
+        AND COALESCE(start_time, due) IS NOT NULL
+        AND COALESCE(start_time, due) BETWEEN ? AND ?
+      GROUP BY event_date
+      ORDER BY event_date ASC
+    `,
+    [userId, from, to]
+  );
+
+  const eventDays = (rows as any[]).map((row) => ({
+    date: new Date(row.event_date),
+    todoCount: Number(row.todoCount)
+  }));
+
+  return { totalTodos, eventDays };
+};

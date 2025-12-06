@@ -66,10 +66,21 @@ export const loginOrRegisterWithGoogle = async (idToken: string) => {
   if ((usersByEmail as any[]).length > 0) {
     const user = (usersByEmail as any[])[0];
 
-    await pool.execute(
-      'UPDATE users SET google_id = ?, auth_provider = ? WHERE id = ?',
-      [googleUser.sub, 'google', user.id]
-    );
+    // Chỉ update google_id, không đổi auth_provider nếu user đã có password
+    // Cho phép user dùng cả hai phương thức (email/password và Google)
+    if (user.password_hash) {
+      // User đã có password -> giữ auth_provider = 'email', chỉ thêm google_id
+      await pool.execute('UPDATE users SET google_id = ? WHERE id = ?', [
+        googleUser.sub,
+        user.id,
+      ]);
+    } else {
+      // User không có password -> set auth_provider = 'google'
+      await pool.execute(
+        'UPDATE users SET google_id = ?, auth_provider = ? WHERE id = ?',
+        [googleUser.sub, 'google', user.id]
+      );
+    }
 
     const token = generateToken(user.id);
     return {

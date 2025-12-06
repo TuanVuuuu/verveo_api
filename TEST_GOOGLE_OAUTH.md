@@ -5,7 +5,7 @@
 - [x] **Bước 1**: Tạo Google Cloud Project và OAuth Configuration
 - [x] **Bước 2**: Hoàn thành Project Configuration (App Information, Audience, Contact Information)
 - [x] **Bước 3**: Tạo OAuth 2.0 Client ID cho Web application
-  - Client ID: `63466806735-hb98hqu58pe6ddlgpvsci1p4d2tit5du.apps.googleusercontent.com` ✅
+  - Client ID: Lưu trong `.env` (không commit) - Xem Google Cloud Console để lấy ✅
 - [x] **Bước 4**: Thêm Client ID vào `.env` ✅
 - [x] **Bước 5**: Chạy database migration ✅
   - ✅ Đã thêm `google_id` column
@@ -36,8 +36,8 @@ GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
    - Authorized JavaScript origins: 
      - `http://localhost:8000` ✅
      - `https://api.verveo.click` ✅
-   - **Client ID**: `63466806735-hb98hqu58pe6ddlgpvsci1p4d2tit5du.apps.googleusercontent.com` ✅
-   - **Client secret**: `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` ✅ (đã lưu, không cần cho backend)
+   - **Client ID**: Lưu trong `.env` (không commit) - Xem Google Cloud Console để lấy ✅
+   - **Client secret**: Lưu an toàn (không commit) - Không cần cho backend ✅
    - ⏳ Copy Client ID vào `.env` (bước tiếp theo)
 
 ## Bước 2: Hoàn thành tạo OAuth Client ID

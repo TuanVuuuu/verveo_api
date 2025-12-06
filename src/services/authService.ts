@@ -64,14 +64,17 @@ export const loginUser = async (email: string, password: string) => {
   }
   
   const user = (users as any[])[0] as User;
-  
-  if (user.auth_provider === 'google') {
+
+  // Chỉ block nếu user HOÀN TOÀN không có password (chỉ có Google)
+  // Nếu user có password_hash, cho phép login bằng email/password
+  // (ngay cả khi đã link Google account)
+  if (user.auth_provider === 'google' && !user.password_hash) {
     throw new AppError(
       ErrorKey.AuthInvalidCredentials,
       'This account was registered with Google. Please use Google Sign-In.'
     );
   }
-  
+
   if (!user.password_hash) {
     throw new AppError(ErrorKey.AuthInvalidCredentials, getErrorMessage(ErrorKey.AuthInvalidCredentials));
   }

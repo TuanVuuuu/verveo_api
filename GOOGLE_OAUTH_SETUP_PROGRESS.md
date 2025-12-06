@@ -16,22 +16,33 @@
   - Contact Information: Đã điền ✅
   - OAuth configuration đã được tạo ✅
 
-- [x] **Tạo OAuth 2.0 Client ID**
+- [x] **Tạo OAuth 2.0 Client ID cho Web application**
   - Application type: **Web application** ✅
   - Name: **Verveo Backend** ✅
   - Authorized JavaScript origins:
     - `http://localhost:8000` ✅
     - `https://api.verveo.click` ✅
-  - Client ID: `63466806735-hb98hqu58pe6ddlgpvsci1p4d2tit5du.apps.googleusercontent.com` ✅
-  - Client secret: `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` ✅ (đã lưu)
+  - Client ID: `YOUR_WEB_CLIENT_ID.apps.googleusercontent.com` ⚠️ (Lưu trong `.env`, không commit)
+  - Client secret: `YOUR_CLIENT_SECRET` ⚠️ (Lưu an toàn, không commit)
+  - Status: Enabled ✅
+  - Creation date: December 6, 2025 ✅
+  - ⚠️ **Cần update** `GOOGLE_CLIENT_ID` trong `.env` trên VPS
+
+- [x] **Tạo OAuth 2.0 Client ID cho iOS**
+  - Application type: **iOS** ✅
+  - Name: **Verveo iOS** ✅
+  - Bundle ID: `com.verveo.app` ✅
+  - Team ID: `66Z9XCJX4K` ✅
+  - Client ID: `YOUR_IOS_CLIENT_ID.apps.googleusercontent.com` ⚠️ (Lưu trong iOS app config, không commit)
   - Status: Enabled ✅
   - Creation date: December 6, 2025 ✅
 
-- [x] **Thêm Client ID vào .env**
+- [x] **Thêm Client ID vào .env (Local)**
   ```env
-  GOOGLE_CLIENT_ID=63466806735-hb98hqu58pe6ddlgpvsci1p4d2tit5du.apps.googleusercontent.com
+  GOOGLE_CLIENT_ID=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
   ```
-  ✅ Đã thêm vào file `.env`
+  ✅ Đã thêm vào file `.env` (local) - ⚠️ File `.env` không được commit vào git
+  - ⏳ **Cần update** trên VPS với Client ID thật từ Google Cloud Console
 
 - [x] **Chạy database migration** ✅
   - ✅ Đã thêm `google_id` column (VARCHAR(255), nullable, unique)
@@ -93,10 +104,10 @@ Tất cả các bước setup đã hoàn thành! 🎉
 ## Lưu ý quan trọng
 
 ### Client Secret
-- **Client secret**: `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`
 - ⚠️ **Lưu ý**: Client secret không cần cho backend API (chỉ cần Client ID)
 - 💾 **Nên lưu lại** Client secret ở nơi an toàn (phòng khi cần dùng sau)
 - ⚠️ **Cảnh báo từ Google**: Từ tháng 6/2025, bạn sẽ không thể xem lại Client secret sau khi đóng dialog này
+- ⚠️ **KHÔNG commit** Client Secret vào git repository
 
 ### Test Users
 - App đang ở **testing mode**
@@ -105,6 +116,29 @@ Tất cả các bước setup đã hoàn thành! 🎉
   1. Vào Google Cloud Console → Google Auth Platform → Audience
   2. Scroll xuống phần "Test users"
   3. Thêm email của bạn vào danh sách
+
+## 🎉 Hoàn thành Setup
+
+Tất cả các bước setup đã hoàn thành! Bạn có thể test trên mobile app.
+
+### OAuth Client IDs đã tạo:
+- ✅ **Web Application**: Lưu trong `.env` (không commit) - Xem Google Cloud Console để lấy
+- ✅ **iOS**: Lưu trong iOS app config (không commit) - Xem Google Cloud Console để lấy
+
+Xem chi tiết: [GOOGLE_CLIENT_IDS.md](./GOOGLE_CLIENT_IDS.md)
+
+## 📱 Test trên Mobile App
+
+Xem hướng dẫn chi tiết: [MOBILE_TEST_GOOGLE_OAUTH.md](./MOBILE_TEST_GOOGLE_OAUTH.md)
+
+### Quick Checklist:
+- [ ] Google Sign-In SDK đã được cài đặt trong mobile app
+- [ ] Client ID đã được cấu hình trong app
+- [ ] Test users đã được thêm vào Google Cloud Console (nếu cần)
+- [ ] App đã được build và cài đặt trên device
+- [ ] Test sign in với Google
+- [ ] Verify JWT token được nhận và lưu
+- [ ] Test các API calls với JWT token
 
 Xem chi tiết: [TEST_GOOGLE_OAUTH.md](./TEST_GOOGLE_OAUTH.md)
 

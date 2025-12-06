@@ -29,14 +29,19 @@
 - Updated API_SPEC.md with Google OAuth endpoint documentation
 - Improved authentication flow to support multiple auth providers
 
+### Fixed
+- Fixed Google token verification to accept tokens from any Client ID in same project (iOS, Android, Web)
+- Removed audience check to allow cross-platform token verification
+
 ### Technical Details
 - Google ID Token is verified server-side with Google's OAuth2Client
+- **Token Verification**: Backend accepts tokens from any Client ID in the same Google project (Web, iOS, Android)
 - If user exists with same email (registered via email/password), Google account is automatically linked
 - **Account Linking Logic**:
   - If user has password: Only adds `google_id`, keeps `auth_provider = 'email'` → User can use both methods
   - If user has no password: Sets `auth_provider = 'google'` → User can only use Google
-- Requires `GOOGLE_CLIENT_ID` environment variable (from Google Cloud Console)
-- Mobile apps must use Google Sign-In SDK to obtain ID Token
+- Requires `GOOGLE_CLIENT_ID` environment variable (from Google Cloud Console - Web Application Client ID)
+- Mobile apps use their own Client IDs (iOS/Android) but tokens are verified by backend
 - All Google users are automatically verified (no email verification needed)
 
 ## [2.0.6] - 2025-01-XX

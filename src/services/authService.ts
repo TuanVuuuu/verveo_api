@@ -65,6 +65,17 @@ export const loginUser = async (email: string, password: string) => {
   
   const user = (users as any[])[0] as User;
   
+  if (user.auth_provider === 'google') {
+    throw new AppError(
+      ErrorKey.AuthInvalidCredentials,
+      'This account was registered with Google. Please use Google Sign-In.'
+    );
+  }
+  
+  if (!user.password_hash) {
+    throw new AppError(ErrorKey.AuthInvalidCredentials, getErrorMessage(ErrorKey.AuthInvalidCredentials));
+  }
+  
   if (!user.is_verified) {
     throw new AppError(ErrorKey.AuthEmailNotVerified, getErrorMessage(ErrorKey.AuthEmailNotVerified));
   }
@@ -107,6 +118,9 @@ export const updateUserProfile = async (userId: number, updateData: { name?: str
   
   // If changing password, verify current password
   if (updateData.newPassword && updateData.currentPassword) {
+    if (!user.password_hash) {
+      throw new AppError(ErrorKey.AuthCurrentPasswordIncorrect, getErrorMessage(ErrorKey.AuthCurrentPasswordIncorrect));
+    }
     const isValidPassword = await comparePassword(updateData.currentPassword, user.password_hash);
     if (!isValidPassword) {
       throw new AppError(ErrorKey.AuthCurrentPasswordIncorrect, getErrorMessage(ErrorKey.AuthCurrentPasswordIncorrect));

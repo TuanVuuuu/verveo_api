@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.0.7] - 2025-01-XX
+### Added
+- POST `/auth/google`: Google Sign-In authentication for mobile apps (Android/iOS)
+  - Accepts Google ID Token from mobile Google Sign-In SDK
+  - Automatically creates new user account if doesn't exist
+  - Links Google account to existing email/password account if email matches
+  - Google users are automatically verified (`is_verified = true`)
+  - Google users don't require passwords (`password_hash = null`)
+- `googleAuthService.ts`: Google OAuth token verification and user management
+  - `verifyGoogleToken`: Verifies Google ID Token with Google's servers
+  - `loginOrRegisterWithGoogle`: Handles login or registration flow
+- Database migration for Google OAuth support:
+  - Added `google_id` column (VARCHAR(255), nullable, unique)
+  - Added `auth_provider` column (ENUM: 'email' | 'google', default 'email')
+  - Made `password_hash` nullable for Google users
+- Google OAuth integration using `google-auth-library` package
+
+### Changed
+- Updated `User` model` to include `google_id` and `auth_provider` fields
+- Enhanced `loginUser` to check `auth_provider` and prevent email/password login for Google users
+- Updated API_SPEC.md with Google OAuth endpoint documentation
+- Improved authentication flow to support multiple auth providers
+
+### Technical Details
+- Google ID Token is verified server-side with Google's OAuth2Client
+- If user exists with same email (registered via email/password), Google account is automatically linked
+- Requires `GOOGLE_CLIENT_ID` environment variable (from Google Cloud Console)
+- Mobile apps must use Google Sign-In SDK to obtain ID Token
+- All Google users are automatically verified (no email verification needed)
+
 ## [2.0.6] - 2025-01-XX
 ### Added
 - POST `/todos/batch_import`: Batch import multiple todos in a single API call

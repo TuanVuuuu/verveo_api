@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { registerUser, verifyEmail, loginUser, getUserProfile, updateUserProfile, forgotPassword, resetPassword } from '../services/authService.js';
+import { loginOrRegisterWithGoogle } from '../services/googleAuthService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
@@ -39,6 +40,10 @@ const ResetPasswordRequest = z.object({
   newPassword: z.string().min(6)
 });
 
+const GoogleLoginRequest = z.object({
+  idToken: z.string().min(1)
+});
+
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parse = RegisterRequest.safeParse(req.body);
@@ -75,6 +80,24 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const { email, password } = parse.data;
     const result = await loginUser(email, password);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/google', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parse = GoogleLoginRequest.safeParse(req.body);
+    if (!parse.success) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+    const { idToken } = parse.data;
+    const result = await loginOrRegisterWithGoogle(idToken);
+    res.json({
+      status: 0,
+      message: 'success',
+      data: result,
+    });
   } catch (err) {
     next(err);
   }

@@ -16,13 +16,20 @@ interface GoogleTokenPayload {
 
 export const verifyGoogleToken = async (idToken: string): Promise<GoogleTokenPayload> => {
   try {
+    // Không specify audience để accept token từ bất kỳ Client ID nào trong cùng Google project
+    // (iOS, Android, Web application - tất cả đều trong cùng project)
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      // audience: process.env.GOOGLE_CLIENT_ID, // Removed - accept từ bất kỳ Client ID nào
     });
 
     const payload = ticket.getPayload();
     if (!payload) {
+      throw new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken));
+    }
+
+    // Verify payload có hợp lệ không
+    if (!payload.email || !payload.sub) {
       throw new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken));
     }
 

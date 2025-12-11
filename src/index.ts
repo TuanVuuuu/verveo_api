@@ -8,7 +8,16 @@ import { AIService } from './services/aiService.js';
 import { HealthService } from './services/healthService.js';
 import authRouter from './routes/auth.js';
 import todosRouter from './routes/todos.js';
+import fcmRouter from './routes/fcm.js';
+import notificationRouter from './routes/notification.js';
 import { isAppError, buildErrorPayload } from './utils/errors.js';
+import { fcmService } from './services/fcmService.js';
+import { initializeQueue } from './queues/notificationQueue.js';
+import { initializeRedisLock } from './config/redlock.js';
+import { startNotificationCron } from './jobs/notificationCron.js';
+import { startCleanupCron } from './jobs/cleanupCron.js';
+import { scheduledNotificationService } from './services/scheduledNotificationService.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 
@@ -76,8 +85,9 @@ app.get('/health', async (_req: Request, res: Response) => {
 
 // Mount routers
 app.use('/auth', authRouter);
-
 app.use('/todos', todosRouter);
+app.use('/fcm', fcmRouter);
+app.use('/notifications', notificationRouter);
 
 // Error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,8 +103,50 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   return res.status(500).json(buildErrorPayload(500, 'error.internal', 'Internal Server Error'));
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`✅ Server listening on http://${HOST}:${PORT}`);
-});
+async function startServer() {
+  try {
+    // Initialize Firebase Admin SDK
+    fcmService.initializeFirebase();
+    
+    // Initialize Redis Queue and Distributed Lock
+    if (process.env.ENABLE_CRON === 'true') {
+      try {
+        await initializeRedisLock();
+      } catch (error) {
+        logger.warn('⚠️ Failed to initialize Redlock (distributed lock):', error);
+        logger.warn('⚠️ Cron will use local lock only - not suitable for multi-server deployment');
+      }
+      
+      try {
+        initializeQueue();
+        logger.info('✅ Notification queue initialized');
+      } catch (error) {
+        logger.warn('⚠️ Failed to initialize queue, notifications will be sent directly:', error);
+      }
+      
+      // Catch up missed notifications on startup
+      logger.info('🚀 Running startup catch-up for missed notifications...');
+      await scheduledNotificationService.catchUpMissedNotifications();
+      
+      // Start cron jobs
+      startNotificationCron();
+      startCleanupCron();
+      logger.info('✅ Cron jobs started');
+    } else {
+      logger.info('⚠️ Cron jobs disabled (set ENABLE_CRON=true to enable)');
+    }
+    
+    // Start HTTP server
+    app.listen(PORT, HOST, () => {
+      console.log(`✅ Server listening on http://${HOST}:${PORT}`);
+      logger.info(`🚀 ${APP_TITLE} v${APP_VERSION} ready`);
+    });
+  } catch (error) {
+    logger.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 

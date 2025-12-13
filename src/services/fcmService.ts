@@ -119,7 +119,7 @@ class FCMService {
     logger.info(`📊 Notification results: ${succeeded} succeeded, ${failed} failed`);
   }
 
-  async sendToUser(userId: number, notification: NotificationPayload): Promise<void> {
+  async sendToUser(userId: number, notification: NotificationPayload): Promise<number> {
     try {
       const [rows] = await db.query<RowDataPacket[]>(
         'SELECT fcm_token FROM device_tokens WHERE user_id = ? AND is_active = TRUE',
@@ -131,11 +131,14 @@ class FCMService {
       if (tokens.length > 0) {
         await this.sendToDevices(tokens, notification);
         logger.info(`✅ Sent notification to ${tokens.length} devices of user ${userId}`);
+        return tokens.length;
       } else {
         logger.warn(`⚠️ No active devices found for user ${userId}`);
+        return 0;
       }
     } catch (error) {
       logger.error(`❌ Failed to send notification to user ${userId}:`, error);
+      throw error;
     }
   }
 

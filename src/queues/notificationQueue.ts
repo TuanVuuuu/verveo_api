@@ -43,9 +43,15 @@ export function initializeQueue(): Queue.Queue<NotificationJob> {
           return { skipped: true, reason: 'user_preferences' };
         }
         
-        await fcmService.sendToUser(userId, notification);
-        logger.info(`✅ Notification sent successfully (job ${job.id})`);
-        return { sent: true };
+        const devicesCount = await fcmService.sendToUser(userId, notification);
+        
+        if (devicesCount > 0) {
+          logger.info(`✅ Notification sent successfully to ${devicesCount} device(s) (job ${job.id})`);
+          return { sent: true, devicesCount };
+        } else {
+          logger.warn(`⚠️ Notification queued but no active devices found for user ${userId} (job ${job.id})`);
+          return { sent: false, devicesCount: 0, reason: 'no_devices' };
+        }
       } catch (error) {
         logger.error(`❌ Failed to send notification (job ${job.id}):`, error);
         throw error;

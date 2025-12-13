@@ -105,8 +105,12 @@ class ScheduledNotificationService {
         
         logger.info(`✅ Queued notification for todo ${todo.id}`);
       } else {
-        await fcmService.sendToUser(todo.user_id, notification);
-        logger.info(`✅ Sent notification directly for todo ${todo.id}`);
+        const devicesCount = await fcmService.sendToUser(todo.user_id, notification);
+        if (devicesCount > 0) {
+          logger.info(`✅ Sent notification directly to ${devicesCount} device(s) for todo ${todo.id}`);
+        } else {
+          logger.warn(`⚠️ No active devices found for user ${todo.user_id} (todo ${todo.id})`);
+        }
       }
       
       if (process.env.ENABLE_NOTIFICATION_LOGS === 'true') {
@@ -243,11 +247,15 @@ class ScheduledNotificationService {
             delay: 2000
           },
         });
+        logger.info(`✅ Queued late notification for todo ${todo.id}`);
       } else {
-        await fcmService.sendToUser(todo.user_id, notification);
+        const devicesCount = await fcmService.sendToUser(todo.user_id, notification);
+        if (devicesCount > 0) {
+          logger.info(`✅ Sent late notification directly to ${devicesCount} device(s) for todo ${todo.id}`);
+        } else {
+          logger.warn(`⚠️ No active devices found for user ${todo.user_id} (late todo ${todo.id})`);
+        }
       }
-      
-      logger.info(`✅ Sent late notification for todo ${todo.id}`);
       
     } catch (error) {
       logger.error(`❌ Failed to send late notification for todo ${todo.id}:`, error);

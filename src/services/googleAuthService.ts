@@ -1,4 +1,5 @@
 import { OAuth2Client } from 'google-auth-library';
+import admin from 'firebase-admin';
 import pool from '../config/database.js';
 import { generateToken } from '../utils/jwt.js';
 import { AppError } from '../utils/errors.js';
@@ -45,8 +46,47 @@ export const verifyGoogleToken = async (idToken: string): Promise<GoogleTokenPay
   }
 };
 
+export const verifyFirebaseToken = async (idToken: string): Promise<GoogleTokenPayload> => {
+  try {
+    if (!admin.apps || admin.apps.length === 0) {
+      throw new Error('Firebase Admin SDK not initialized');
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    if (!decodedToken.email || !decodedToken.uid) {
+      throw new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken));
+    }
+
+    return {
+      sub: decodedToken.uid,
+      email: decodedToken.email,
+      email_verified: decodedToken.email_verified || false,
+      name: decodedToken.name || decodedToken.email.split('@')[0],
+      picture: decodedToken.picture,
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken));
+  }
+};
+
+export const verifyToken = async (idToken: string): Promise<GoogleTokenPayload> => {
+  try {
+    return await verifyGoogleToken(idToken);
+  } catch (googleError) {
+    try {
+      return await verifyFirebaseToken(idToken);
+    } catch (firebaseError) {
+      throw new AppError(ErrorKey.AuthInvalidToken, getErrorMessage(ErrorKey.AuthInvalidToken));
+    }
+  }
+};
+
 export const loginOrRegisterWithGoogle = async (idToken: string) => {
-  const googleUser = await verifyGoogleToken(idToken);
+  const googleUser = await verifyToken(idToken);
 
   if (!googleUser.email_verified) {
     throw new AppError(ErrorKey.AuthEmailNotVerified, getErrorMessage(ErrorKey.AuthEmailNotVerified));

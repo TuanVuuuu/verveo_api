@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { deviceTokenService } from '../services/deviceTokenService.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey } from '../constants/errorCatalog.js';
+import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
 const registerDeviceSchema = z.object({
@@ -16,17 +17,25 @@ const registerDeviceSchema = z.object({
 class FCMController {
   async registerDevice(req: Request, res: Response): Promise<void> {
     try {
+      logger.info(`📱 [FCM Register] Received request - Device: ${req.body?.deviceId || 'unknown'}, Platform: ${req.body?.platform || 'unknown'}`);
+      
       const validation = registerDeviceSchema.safeParse(req.body);
       if (!validation.success) {
+        logger.warn(`⚠️ [FCM Register] Validation failed:`, validation.error.errors);
         throw new AppError(ErrorKey.RequestInvalid);
       }
 
       const userId = (req as any).user?.userId;
+      const hasAuth = !!(req as any).user;
+      
+      logger.info(`📱 [FCM Register] Valid request - Device: ${validation.data.deviceId}, Platform: ${validation.data.platform}, User: ${userId || 'guest'}, Auth: ${hasAuth ? 'YES' : 'NO'}`);
       
       await deviceTokenService.registerDevice({
         ...validation.data,
         userId,
       });
+
+      logger.info(`✅ [FCM Register] Success - Device: ${validation.data.deviceId}, User: ${userId || 'guest'}`);
 
       res.json({
         status: 0,
@@ -38,6 +47,7 @@ class FCMController {
         },
       });
     } catch (error) {
+      logger.error(`❌ [FCM Register] Failed:`, error);
       throw error;
     }
   }

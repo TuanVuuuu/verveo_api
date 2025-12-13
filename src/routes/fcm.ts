@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { fcmController } from '../controllers/fcmController.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -14,6 +15,7 @@ const optionalAuth = (req: any, res: any, next: any) => {
 };
 
 router.post('/register', optionalAuth, (req, res, next) => {
+  logger.info(`📥 [FCM Route] POST /fcm/register - IP: ${req.ip}, User-Agent: ${req.get('user-agent')?.substring(0, 50) || 'unknown'}`);
   fcmController.registerDevice(req, res).catch(next);
 });
 

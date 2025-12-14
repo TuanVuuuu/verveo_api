@@ -1,6 +1,44 @@
 # Changelog
 
-## [2.0.7] - 2025-12-06
+## [2.0.7] - 2025-01-XX
+### Added
+- POST `/auth/apple`: Apple Sign-In authentication for iOS app
+  - Accepts Apple ID Token from iOS app with nonce verification
+  - Automatically creates new user account if doesn't exist
+  - **Does NOT auto-link** with Email/Google accounts (separate accounts)
+  - Apple users are automatically verified (`is_verified = true`)
+  - Apple users don't require passwords (`password_hash = null`, `auth_provider = 'apple'`)
+  - Nonce verification to prevent replay attacks (Apple strongly recommends)
+- `appleAuthService.ts`: Apple Sign-In token verification and user management
+  - `verifyAppleToken`: Verifies Apple ID Token with Apple's JWKS (public keys)
+  - `loginOrRegisterWithApple`: Handles login or registration flow
+  - Nonce verification: `decoded.nonce === SHA256(rawNonce)` for replay attack protection
+- Database migration for Apple Sign-In support:
+  - Added `apple_id` column (VARCHAR(255), nullable, unique)
+  - Updated `auth_provider` enum to include 'apple' (ENUM: 'email' | 'google' | 'apple')
+  - Added index `idx_apple_id` for faster lookups
+- Apple Sign-In integration using `jsonwebtoken` and `jwks-rsa` packages
+- Test scripts: `test-apple-auth.ts`, `test-apple-migration.ts`, `run-apple-migration.ts`
+- Documentation: Complete guide in `sign_in_with_apple/APPLE_SIGN_IN_GUIDE.md`
+
+### Changed
+- Updated `registerUser()` in `authService.ts` to support linking with Google accounts
+  - If user exists with Google account (same email) → adds password to existing account
+  - Does NOT handle Apple accounts (Apple does not auto-link)
+- Updated API_SPEC.md to v2.0.7 with Apple Sign-In endpoint documentation
+- Enhanced authentication system to support 3 methods: Email/Password, Google, Apple
+
+### Technical Details
+- Apple ID Token is verified server-side with Apple's JWKS from `appleid.apple.com`
+- **Nonce Verification**: Required in request body, backend verifies `decoded.nonce === SHA256(rawNonce)`
+- **Account Linking Rules**:
+  - ✅ Email ↔ Google: Auto-link if same email
+  - ❌ Apple: Does NOT auto-link with Email/Google (separate accounts)
+- Apple users can choose "Hide My Email" → email will be private relay (`xxx@privaterelay.appleid.com`)
+- User info (name, email) only available on **first sign-in**, must be saved immediately
+- Requires `APPLE_CLIENT_ID` environment variable (must be iOS app Bundle ID, e.g., `com.vunt.verveo`)
+
+## [2.0.6] - 2025-12-06
 ### Added
 - POST `/auth/google`: Google Sign-In authentication for mobile apps (Android/iOS)
   - Accepts Google ID Token from mobile Google Sign-In SDK

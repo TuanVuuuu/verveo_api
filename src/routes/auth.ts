@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { registerUser, verifyEmail, loginUser, getUserProfile, updateUserProfile, forgotPassword, resetPassword } from '../services/authService.js';
 import { loginOrRegisterWithGoogle } from '../services/googleAuthService.js';
+import { loginOrRegisterWithApple } from '../services/appleAuthService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
@@ -42,6 +43,15 @@ const ResetPasswordRequest = z.object({
 
 const GoogleLoginRequest = z.object({
   idToken: z.string().min(1)
+});
+
+const AppleLoginRequest = z.object({
+  idToken: z.string().min(1),
+  rawNonce: z.string().min(1), // Required: Raw nonce để verify chống replay attack
+  userInfo: z.object({
+    name: z.string().optional(),
+    email: z.string().email().optional(),
+  }).optional(),
 });
 
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -93,6 +103,24 @@ router.post('/google', async (req: Request, res: Response, next: NextFunction) =
     }
     const { idToken } = parse.data;
     const result = await loginOrRegisterWithGoogle(idToken);
+    res.json({
+      status: 0,
+      message: 'success',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/apple', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parse = AppleLoginRequest.safeParse(req.body);
+    if (!parse.success) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+    const { idToken, rawNonce, userInfo } = parse.data;
+    const result = await loginOrRegisterWithApple(idToken, rawNonce, userInfo);
     res.json({
       status: 0,
       message: 'success',

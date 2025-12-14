@@ -12,7 +12,10 @@
     "prepare": "husky install",
     "create-test-user": "tsx create-test-user.ts",
     "run-migration": "tsx run-migration.ts",
-    "test-google-auth": "tsx test-google-auth.ts"
+    "test-google-auth": "tsx test-google-auth.ts",
+    "test-apple-auth": "tsx test-apple-auth.ts",
+    "test-apple-migration": "tsx test-apple-migration.ts",
+    "run-apple-migration": "tsx run-apple-migration.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",

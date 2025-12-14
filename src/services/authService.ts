@@ -7,29 +7,55 @@ import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 
 export const registerUser = async (email: string, password: string, name: string) => {
-  // Check if user exists
+  // Tìm user theo email
   const [existingUsers] = await pool.execute(
-    'SELECT id FROM users WHERE email = ?',
+    'SELECT * FROM users WHERE email = ?',
     [email]
   );
   
   if ((existingUsers as any[]).length > 0) {
-    throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
+    const existingUser = (existingUsers as any[])[0];
+    
+    // Nếu user đã có password → throw error (email đã được đăng ký)
+    if (existingUser.password_hash) {
+      throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
+    }
+    
+    // Nếu user chưa có password (đã đăng nhập bằng Google) → thêm password để đồng bộ
+    // ⚠️ Lưu ý: KHÔNG xử lý Apple account (Apple không auto-link)
+    if (existingUser.google_id && !existingUser.apple_id) {
+      const password_hash = await hashPassword(password);
+      const verification_token = generateVerificationToken();
+      
+      await pool.execute(
+        'UPDATE users SET password_hash = ?, name = ?, verification_token = ?, auth_provider = ? WHERE id = ?',
+        [password_hash, name, verification_token, 'email', existingUser.id]
+      );
+      
+      await sendVerificationEmail(email, verification_token);
+      
+      return { 
+        userId: existingUser.id, 
+        message: 'Password added to existing account. Please check your email to verify.' 
+      };
+    }
+    
+    // Nếu user chỉ có Apple account → throw error (không auto-link)
+    if (existingUser.apple_id) {
+      throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
+    }
   }
   
-  // Hash password and generate token
+  // Nếu email chưa tồn tại → tạo account mới
   const password_hash = await hashPassword(password);
   const verification_token = generateVerificationToken();
   
-  // Create user
   const [result] = await pool.execute(
     'INSERT INTO users (email, password_hash, name, verification_token) VALUES (?, ?, ?, ?)',
     [email, password_hash, name, verification_token]
   );
   
   const userId = (result as any).insertId;
-  
-  // Send verification email
   await sendVerificationEmail(email, verification_token);
   
   return { userId, message: 'User created. Please check your email to verify.' };

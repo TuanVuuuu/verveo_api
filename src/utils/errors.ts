@@ -28,13 +28,11 @@ export const buildErrorPayload = (statusCode: number, key: string, description?:
   const desc = description || getErrorMessage(key, key);
   return {
     status: 1,
-    message: key,
-    data: {
-      errorCode: statusCode,
-      errorKey: key,
-      description: desc
-    },
-    description: desc
+    // Theo spec: message là text hiển thị (không phải key)
+    message: desc,
+    errorKey: key,
+    data: null,
+    description: desc,
   };
 };
 

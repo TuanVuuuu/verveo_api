@@ -6,7 +6,8 @@ export interface User {
   is_verified: boolean;
   verification_token: string | null;
   google_id: string | null;
-  auth_provider: 'email' | 'google';
+  apple_id: string | null;
+  auth_provider: 'email' | 'google' | 'apple';
   created_at: Date;
 }
 

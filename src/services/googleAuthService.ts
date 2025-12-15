@@ -97,46 +97,53 @@ export const loginOrRegisterWithGoogle = async (idToken: string) => {
   ]);
 
   if ((usersByGoogleId as any[]).length > 0) {
+    // Đã có identity Google → login bình thường
     const user = (usersByGoogleId as any[])[0];
     const token = generateToken(user.id);
     return {
+      state: 'OK_LOGIN',
+      context: {
+        user: { id: user.id, email: user.email, name: user.name },
+        isNewUser: false,
+      },
+      actions: [],
       token,
-      user: { id: user.id, email: user.email, name: user.name },
-      isNewUser: false,
     };
   }
 
+  // Chưa có Google identity → kiểm tra xem email đã thuộc về user nào chưa
   const [usersByEmail] = await pool.execute('SELECT * FROM users WHERE email = ?', [
     googleUser.email,
   ]);
 
   if ((usersByEmail as any[]).length > 0) {
+    // Email đã được dùng bởi 1 user khác → KHÔNG auto-link
     const user = (usersByEmail as any[])[0];
 
-    // Chỉ update google_id, không đổi auth_provider nếu user đã có password
-    // Cho phép user dùng cả hai phương thức (email/password và Google)
-    if (user.password_hash) {
-      // User đã có password -> giữ auth_provider = 'email', chỉ thêm google_id
-      await pool.execute('UPDATE users SET google_id = ? WHERE id = ?', [
-        googleUser.sub,
-        user.id,
-      ]);
-    } else {
-      // User không có password -> set auth_provider = 'google'
-      await pool.execute(
-        'UPDATE users SET google_id = ?, auth_provider = ? WHERE id = ?',
-        [googleUser.sub, 'google', user.id]
-      );
-    }
+    const existingProviders: string[] = [];
+    if (user.password_hash) existingProviders.push('password');
+    if (user.google_id) existingProviders.push('google');
+    if (user.apple_id) existingProviders.push('apple');
 
-    const token = generateToken(user.id);
     return {
-      token,
-      user: { id: user.id, email: user.email, name: user.name },
-      isNewUser: false,
+      state: 'NEED_USER_CONFIRM_LINK',
+      context: {
+        email: googleUser.email,
+        existing_providers: existingProviders,
+      },
+      actions: [
+        {
+          type: 'REAUTH',
+          allowed_methods: existingProviders,
+        },
+        {
+          type: 'CANCEL',
+        },
+      ],
     };
   }
 
+  // Không có user nào với email này → tạo account mới dùng Google
   const [result] = await pool.execute(
     'INSERT INTO users (email, name, google_id, auth_provider, is_verified, password_hash) VALUES (?, ?, ?, ?, ?, ?)',
     [googleUser.email, googleUser.name, googleUser.sub, 'google', true, null]
@@ -146,9 +153,57 @@ export const loginOrRegisterWithGoogle = async (idToken: string) => {
   const token = generateToken(userId);
 
   return {
+    state: 'OK_LOGIN',
+    context: {
+      user: { id: userId, email: googleUser.email, name: googleUser.name },
+      isNewUser: true,
+    },
+    actions: [],
     token,
-    user: { id: userId, email: googleUser.email, name: googleUser.name },
-    isNewUser: true,
+  };
+};
+
+/**
+ * Link Google account cho user đã login (dùng trong Settings)
+ */
+export const linkGoogleAccount = async (userId: number, idToken: string) => {
+  const googleUser = await verifyToken(idToken);
+
+  if (!googleUser.email_verified) {
+    throw new AppError(ErrorKey.AuthEmailNotVerified, getErrorMessage(ErrorKey.AuthEmailNotVerified));
+  }
+
+  // Kiểm tra xem Google sub này đã gắn với user khác chưa
+  const [byGoogleId] = await pool.execute('SELECT id FROM users WHERE google_id = ?', [
+    googleUser.sub,
+  ]);
+
+  if ((byGoogleId as any[]).length > 0) {
+    const existing = (byGoogleId as any[])[0] as { id: number };
+    if (existing.id !== userId) {
+      // Google account này đã gắn với user khác
+      throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
+    }
+  }
+
+  // Gắn google_id cho user hiện tại (nếu chưa có)
+  await pool.execute(
+    'UPDATE users SET google_id = ?, auth_provider = IF(auth_provider = \"email\", auth_provider, \"google\") WHERE id = ?',
+    [googleUser.sub, userId]
+  );
+
+  const [users] = await pool.execute('SELECT id, email, name FROM users WHERE id = ?', [userId]);
+  const user = (users as any[])[0];
+  const token = generateToken(userId);
+
+  return {
+    state: 'OK_LOGIN',
+    context: {
+      user: { id: user.id, email: user.email, name: user.name },
+      isNewUser: false,
+    },
+    actions: [],
+    token,
   };
 };
 

@@ -1,8 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { registerUser, verifyEmail, loginUser, getUserProfile, updateUserProfile, forgotPassword, resetPassword } from '../services/authService.js';
-import { loginOrRegisterWithGoogle } from '../services/googleAuthService.js';
-import { loginOrRegisterWithApple } from '../services/appleAuthService.js';
+import { loginOrRegisterWithGoogle, linkGoogleAccount } from '../services/googleAuthService.js';
+import { loginOrRegisterWithApple, linkAppleAccount } from '../services/appleAuthService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
@@ -62,7 +62,11 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     }
     const { email, password, name } = parse.data;
     const result = await registerUser(email, password, name);
-    res.json(result);
+    res.json({
+      status: 0,
+      message: 'success',
+      data: result,
+    });
   } catch (err) {
     next(err);
   }
@@ -89,7 +93,19 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     }
     const { email, password } = parse.data;
     const result = await loginUser(email, password);
-    res.json(result);
+    res.json({
+      status: 0,
+      message: 'success',
+      data: {
+        state: 'OK_LOGIN',
+        context: {
+          user: result.user,
+          isNewUser: false,
+        },
+        actions: [],
+        token: result.token,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -121,6 +137,46 @@ router.post('/apple', async (req: Request, res: Response, next: NextFunction) =>
     }
     const { idToken, rawNonce, userInfo } = parse.data;
     const result = await loginOrRegisterWithApple(idToken, rawNonce, userInfo);
+    res.json({
+      status: 0,
+      message: 'success',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/link/google - Link Google account (Settings)
+router.post('/link/google', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parse = GoogleLoginRequest.safeParse(req.body);
+    if (!parse.success) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+    const { idToken } = parse.data;
+    const userId = (req as any).user.userId;
+    const result = await linkGoogleAccount(userId, idToken);
+    res.json({
+      status: 0,
+      message: 'success',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/link/apple - Link Apple account (Settings)
+router.post('/link/apple', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parse = AppleLoginRequest.safeParse(req.body);
+    if (!parse.success) {
+      return next(new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid)));
+    }
+    const { idToken, rawNonce, userInfo } = parse.data;
+    const userId = (req as any).user.userId;
+    const result = await linkAppleAccount(userId, idToken, rawNonce, userInfo);
     res.json({
       status: 0,
       message: 'success',

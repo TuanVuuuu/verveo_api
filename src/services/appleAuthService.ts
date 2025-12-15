@@ -134,21 +134,55 @@ export const loginOrRegisterWithApple = async (
     const user = (usersByAppleId as any[])[0];
     const token = generateToken(user.id);
     return {
+      state: 'OK_LOGIN',
+      context: {
+        user: { id: user.id, email: user.email, name: user.name },
+        isNewUser: false,
+      },
+      actions: [],
       token,
-      user: { id: user.id, email: user.email, name: user.name },
-      isNewUser: false,
     };
   }
 
-  // Bước 2: ❌ KHÔNG tìm user theo email để auto-link
-  // Apple không tự động link với Email/Google chỉ dựa trên email
-  // Lý do: Apple có "Hide My Email" → email có thể là private relay email, không đáng tin cậy
-
-  // Bước 3: Tạo user mới
+  // Bước 2: Tạo user mới hoặc gợi ý link nếu email trùng (nhưng KHÔNG auto-link)
   // Lấy name từ userInfo (chỉ có trong lần đầu) hoặc từ token
   const userName = userInfo?.name || appleUser.name || 'Apple User';
   // Lấy email từ token hoặc userInfo, nếu không có thì dùng private relay email
-  const userEmail = appleUser.email || userInfo?.email || `apple_${appleUser.sub}@privaterelay.appleid.com`;
+  const userEmail =
+    appleUser.email || userInfo?.email || `apple_${appleUser.sub}@privaterelay.appleid.com`;
+
+  // ❗ QUAN TRỌNG: KHÔNG auto-link Apple với Email/Google
+  // Nếu email này đã thuộc về một account khác (email/password hoặc Google),
+  // không auto-merge, mà trả về state để user tự xác nhận
+  const [existingByEmail] = await pool.execute('SELECT * FROM users WHERE email = ?', [
+    userEmail,
+  ]);
+
+  if ((existingByEmail as any[]).length > 0) {
+    const user = (existingByEmail as any[])[0];
+
+    const existingProviders: string[] = [];
+    if (user.password_hash) existingProviders.push('password');
+    if (user.google_id) existingProviders.push('google');
+    if (user.apple_id) existingProviders.push('apple');
+
+    return {
+      state: 'NEED_USER_CONFIRM_LINK',
+      context: {
+        email: userEmail,
+        existing_providers: existingProviders,
+      },
+      actions: [
+        {
+          type: 'REAUTH',
+          allowed_methods: existingProviders,
+        },
+        {
+          type: 'CANCEL',
+        },
+      ],
+    };
+  }
 
   const [result] = await pool.execute(
     'INSERT INTO users (email, name, apple_id, auth_provider, is_verified, password_hash) VALUES (?, ?, ?, ?, ?, ?)',
@@ -159,8 +193,56 @@ export const loginOrRegisterWithApple = async (
   const token = generateToken(userId);
 
   return {
+    state: 'OK_LOGIN',
+    context: {
+      user: { id: userId, email: userEmail, name: userName },
+      isNewUser: true,
+    },
+    actions: [],
     token,
-    user: { id: userId, email: userEmail, name: userName },
-    isNewUser: true,
+  };
+};
+
+/**
+ * Link Apple account cho user đã login (dùng trong Settings)
+ */
+export const linkAppleAccount = async (
+  userId: number,
+  idToken: string,
+  rawNonce?: string,
+  userInfo?: { name?: string; email?: string }
+) => {
+  const appleUser = await verifyAppleToken(idToken, rawNonce);
+
+  // Kiểm tra xem Apple sub này đã gắn với user khác chưa
+  const [byAppleId] = await pool.execute('SELECT id FROM users WHERE apple_id = ?', [
+    appleUser.sub,
+  ]);
+
+  if ((byAppleId as any[]).length > 0) {
+    const existing = (byAppleId as any[])[0] as { id: number };
+    if (existing.id !== userId) {
+      throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
+    }
+  }
+
+  // Gắn apple_id cho user hiện tại (nếu chưa có)
+  await pool.execute(
+    'UPDATE users SET apple_id = ?, auth_provider = IF(auth_provider = \"email\", auth_provider, \"apple\") WHERE id = ?',
+    [appleUser.sub, userId]
+  );
+
+  const [users] = await pool.execute('SELECT id, email, name FROM users WHERE id = ?', [userId]);
+  const user = (users as any[])[0];
+  const token = generateToken(userId);
+
+  return {
+    state: 'OK_LOGIN',
+    context: {
+      user: { id: user.id, email: user.email, name: user.name },
+      isNewUser: false,
+    },
+    actions: [],
+    token,
   };
 };

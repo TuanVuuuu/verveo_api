@@ -11,6 +11,7 @@ import todosRouter from './routes/todos.js';
 import fcmRouter from './routes/fcm.js';
 import notificationRouter from './routes/notification.js';
 import { isAppError, buildErrorPayload } from './utils/errors.js';
+import { ErrorKey } from './constants/errorCatalog.js';
 import { fcmService } from './services/fcmService.js';
 import { initializeQueue } from './queues/notificationQueue.js';
 import { initializeRedisLock } from './config/redlock.js';
@@ -93,14 +94,49 @@ app.use('/notifications', notificationRouter);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error('❌ Error:', err);
+
+  // Helper: quyết định HTTP status gửi ra ngoài
+  const decideHttpStatus = (errorKey: string, defaultStatus: number): number => {
+    // Chỉ 3 trường hợp đặc biệt dùng HTTP code thật:
+    // - 401: token hết hạn
+    // - 403: không có quyền
+    // - 500: lỗi hệ thống
+    if (errorKey === ErrorKey.AuthTokenExpired) {
+      return 401;
+    }
+    if (errorKey === ErrorKey.Forbidden || errorKey === ErrorKey.Unauthorized) {
+      return 403;
+    }
+    if (errorKey === ErrorKey.Internal) {
+      return 500;
+    }
+    if (defaultStatus === 500) {
+      return 500;
+    }
+    // Các lỗi còn lại → luôn trả về 200
+    return 200;
+  };
+
   if (isAppError(err)) {
-    return res.status(err.status).json(buildErrorPayload(err.status, err.key, err.description));
+    const httpStatus = decideHttpStatus(err.key, err.status);
+    return res.status(httpStatus).json(buildErrorPayload(err.status, err.key, err.description));
   }
+
   // Validation errors from Zod
   if (typeof err === 'object' && err && 'issues' in (err as any)) {
-    return res.status(422).json(buildErrorPayload(422, 'error.request.invalid', 'Invalid request format'));
+    const key = ErrorKey.RequestInvalid;
+    const httpStatus = decideHttpStatus(key, 422);
+    return res
+      .status(httpStatus)
+      .json(buildErrorPayload(422, key, 'Invalid request format'));
   }
-  return res.status(500).json(buildErrorPayload(500, 'error.internal', 'Internal Server Error'));
+
+  // Unknown / internal error
+  const key = ErrorKey.Internal;
+  const httpStatus = decideHttpStatus(key, 500);
+  return res
+    .status(httpStatus)
+    .json(buildErrorPayload(500, key, 'Internal Server Error'));
 });
 
 async function startServer() {

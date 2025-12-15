@@ -23,22 +23,61 @@ export enum ErrorKey {
 
 export const ERROR_CATALOG: Record<ErrorKey, ErrorEntry> = {
   // Generic
-  [ErrorKey.Internal]: { message: 'Internal Server Error', http: 500 },
-  [ErrorKey.RequestInvalid]: { message: 'Invalid request format', http: 422 },
-  [ErrorKey.Forbidden]: { message: 'Forbidden', http: 403 },
-  [ErrorKey.Unauthorized]: { message: 'Unauthorized', http: 401 },
+  [ErrorKey.Internal]: { message: 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.', http: 500 },
+  [ErrorKey.RequestInvalid]: {
+    message: 'Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại.',
+    http: 422,
+  },
+  [ErrorKey.Forbidden]: {
+    message: 'Tài khoản không có quyền truy cập tính năng này.',
+    http: 403,
+  },
+  // Theo yêu cầu: chỉ dùng 401 cho trường hợp token hết hạn
+  // Các trường hợp thiếu token / không có quyền → dùng 403
+  [ErrorKey.Unauthorized]: {
+    message: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
+    http: 403,
+  },
 
-    // Auth
-    [ErrorKey.AuthUserExists]: { message: 'User already exists', http: 409 },
-    [ErrorKey.AuthInvalidCredentials]: { message: 'Invalid email or password', http: 401 },
-    [ErrorKey.AuthCurrentPasswordIncorrect]: { message: 'Current password is incorrect', http: 403 },
-    [ErrorKey.AuthEmailNotVerified]: { message: 'Please verify your email first', http: 403 },
-    [ErrorKey.AuthInvalidToken]: { message: 'Invalid token', http: 401 },
-    [ErrorKey.AuthTokenExpired]: { message: 'Token has expired', http: 401 },
-    [ErrorKey.AuthResetTokenExpired]: { message: 'Reset token has expired', http: 401 },
+  // Auth
+  [ErrorKey.AuthUserExists]: {
+    message: 'Email này đã được sử dụng. Vui lòng đăng nhập bằng tài khoản hiện có.',
+    http: 409,
+  },
+  // Sai email/mật khẩu → 400 (bad request), không phải 401 (chỉ dùng cho token hết hạn)
+  [ErrorKey.AuthInvalidCredentials]: {
+    message: 'Tên đăng nhập hoặc mật khẩu không hợp lệ.',
+    http: 400,
+  },
+  [ErrorKey.AuthCurrentPasswordIncorrect]: {
+    message: 'Mật khẩu cũ không đúng.',
+    http: 403,
+  },
+  [ErrorKey.AuthEmailNotVerified]: {
+    message: 'Email chưa được xác thực. Vui lòng kiểm tra hộp thư của bạn.',
+    http: 403,
+  },
+  // Token không hợp lệ (verify social, verify email, reset password) → 400
+  [ErrorKey.AuthInvalidToken]: {
+    message: 'Phiên xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.',
+    http: 400,
+  },
+  // ❗ Chỉ trường hợp này giữ 401 theo yêu cầu
+  [ErrorKey.AuthTokenExpired]: {
+    message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+    http: 401,
+  },
+  // Reset token hết hạn → 400 (bad request) thay vì 401
+  [ErrorKey.AuthResetTokenExpired]: {
+    message: 'Link đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu link mới.',
+    http: 400,
+  },
 
   // Todos
-  [ErrorKey.TodoNotFound]: { message: 'Todo not found or access denied', http: 404 },
+  [ErrorKey.TodoNotFound]: {
+    message: 'Công việc không tồn tại hoặc đã bị xoá.',
+    http: 404,
+  },
 };
 
 export const getErrorMessage = (key: ErrorKey | string, fallback?: string) => {

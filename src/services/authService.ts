@@ -14,36 +14,30 @@ export const registerUser = async (email: string, password: string, name: string
   );
   
   if ((existingUsers as any[]).length > 0) {
-    const existingUser = (existingUsers as any[])[0];
-    
-    // Nếu user đã có password → throw error (email đã được đăng ký)
-    if (existingUser.password_hash) {
-      throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
-    }
-    
-    // Nếu user chưa có password (đã đăng nhập bằng Google) → thêm password để đồng bộ
-    // ⚠️ Lưu ý: KHÔNG xử lý Apple account (Apple không auto-link)
-    if (existingUser.google_id && !existingUser.apple_id) {
-      const password_hash = await hashPassword(password);
-      const verification_token = generateVerificationToken();
-      
-      await pool.execute(
-        'UPDATE users SET password_hash = ?, name = ?, verification_token = ?, auth_provider = ? WHERE id = ?',
-        [password_hash, name, verification_token, 'email', existingUser.id]
-      );
-      
-      await sendVerificationEmail(email, verification_token);
-      
-      return { 
-        userId: existingUser.id, 
-        message: 'Password added to existing account. Please check your email to verify.' 
-      };
-    }
-    
-    // Nếu user chỉ có Apple account → throw error (không auto-link)
-    if (existingUser.apple_id) {
-      throw new AppError(ErrorKey.AuthUserExists, getErrorMessage(ErrorKey.AuthUserExists));
-    }
+    const existingUser = (existingUsers as any[])[0] as User;
+
+    // ĐÃ có user với email này → KHÔNG auto-link, trả về state cho FE xử lý UX confirm/link
+    const existingProviders: string[] = [];
+    if (existingUser.password_hash) existingProviders.push('password');
+    if (existingUser.google_id) existingProviders.push('google');
+    if ((existingUser as any).apple_id) existingProviders.push('apple');
+
+    return {
+      state: 'NEED_USER_CONFIRM_LINK',
+      context: {
+        email,
+        existing_providers: existingProviders,
+      },
+      actions: [
+        {
+          type: 'REAUTH',
+          allowed_methods: existingProviders,
+        },
+        {
+          type: 'CANCEL',
+        },
+      ],
+    };
   }
   
   // Nếu email chưa tồn tại → tạo account mới

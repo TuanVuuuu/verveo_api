@@ -192,7 +192,13 @@ router.get('/me', authenticateToken, async (req: Request, res: Response, next: N
   try {
     const userId = (req as any).user.userId;
     const result = await getUserProfile(userId);
-    res.json(result);
+    res.json({
+      status: 0,
+      message: 'success',
+      errorKey: null,
+      data: result,
+      description: null,
+    });
   } catch (err) {
     next(err);
   }

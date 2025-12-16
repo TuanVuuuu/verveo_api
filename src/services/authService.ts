@@ -115,7 +115,7 @@ export const loginUser = async (email: string, password: string) => {
 
 export const getUserProfile = async (userId: number) => {
   const [users] = await pool.execute(
-    'SELECT id, email, name FROM users WHERE id = ?',
+    'SELECT id, email, name, password_hash, google_id, apple_id FROM users WHERE id = ?',
     [userId]
   );
   
@@ -123,8 +123,26 @@ export const getUserProfile = async (userId: number) => {
     throw new AppError(ErrorKey.Unauthorized, getErrorMessage(ErrorKey.Unauthorized));
   }
   
-  const user = (users as any[])[0];
-  return { id: user.id, email: user.email, name: user.name };
+  const user = (users as any[])[0] as User & {
+    google_id?: string | null;
+    apple_id?: string | null;
+  };
+
+  const hasPassword = !!user.password_hash;
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    signInMethods: {
+      password: {
+        enabled: hasPassword,
+        hasPassword,
+      },
+      google: !!user.google_id,
+      apple: !!(user as any).apple_id,
+    },
+  };
 };
 
 export const updateUserProfile = async (userId: number, updateData: { name?: string; currentPassword?: string; newPassword?: string }) => {

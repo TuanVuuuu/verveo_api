@@ -6,6 +6,7 @@ import { loginOrRegisterWithApple, linkAppleAccount } from '../services/appleAut
 import { authenticateToken } from '../middleware/auth.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
+import { requestAccountDeletion } from '../services/accountDeletionService.js';
 
 const router = express.Router();
 
@@ -244,6 +245,25 @@ router.post('/reset-password', async (req: Request, res: Response, next: NextFun
     const { token, newPassword } = parse.data;
     const result = await resetPassword(token, newPassword);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /auth/account - Request account deletion
+router.delete('/account', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    await requestAccountDeletion(userId);
+    res.json({
+      status: 0,
+      message: 'success',
+      data: {
+        message: 'Account deletion requested. Your account will be permanently deleted in 30 days. You can cancel this by logging in again.',
+        warning: 'Deleting your account will remove all login methods linked to it, including email, Google, and Apple sign-in. This action cannot be undone.',
+        deletionScheduledAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    });
   } catch (err) {
     next(err);
   }

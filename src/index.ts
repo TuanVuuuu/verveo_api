@@ -17,6 +17,7 @@ import { initializeQueue } from './queues/notificationQueue.js';
 import { initializeRedisLock } from './config/redlock.js';
 import { startNotificationCron } from './jobs/notificationCron.js';
 import { startCleanupCron } from './jobs/cleanupCron.js';
+import { startAccountDeletionCron } from './jobs/accountDeletionCron.js';
 import { scheduledNotificationService } from './services/scheduledNotificationService.js';
 import { logger } from './utils/logger.js';
 
@@ -167,6 +168,7 @@ async function startServer() {
       // Start cron jobs
       startNotificationCron();
       startCleanupCron();
+      startAccountDeletionCron();
       logger.info('✅ Cron jobs started');
     } else {
       logger.info('⚠️ Cron jobs disabled (set ENABLE_CRON=true to enable)');

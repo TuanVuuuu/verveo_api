@@ -8,6 +8,9 @@ export interface User {
   google_id: string | null;
   apple_id: string | null;
   auth_provider: 'email' | 'google' | 'apple';
+  deletion_requested_at: Date | null;
+  deletion_scheduled_at: Date | null;
+  is_deleted: boolean;
   created_at: Date;
 }
 

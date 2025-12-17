@@ -5,6 +5,8 @@ import pool from '../config/database.js';
 import { generateToken } from '../utils/jwt.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
+import { cancelAccountDeletion } from './accountDeletionService.js';
+import { logger } from '../utils/logger.js';
 
 // Apple's public key endpoint
 const APPLE_ISSUER = 'https://appleid.apple.com';
@@ -132,6 +134,18 @@ export const loginOrRegisterWithApple = async (
 
   if ((usersByAppleId as any[]).length > 0) {
     const user = (usersByAppleId as any[])[0];
+    
+    // Check if account is deleted
+    if (user.is_deleted) {
+      throw new AppError(ErrorKey.AuthInvalidCredentials, 'Account has been deleted');
+    }
+    
+    // Cancel deletion if user has pending deletion request
+    if (user.deletion_requested_at) {
+      await cancelAccountDeletion(user.id);
+      logger.info(`Account deletion cancelled for user ${user.id} due to Apple login`);
+    }
+    
     const token = generateToken(user.id);
     return {
       state: 'OK_LOGIN',

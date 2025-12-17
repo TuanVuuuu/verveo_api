@@ -5,6 +5,8 @@ import { sendVerificationEmail, sendPasswordResetEmail } from './emailService.js
 import { User, CreateUserData } from '../models/User.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
+import { cancelAccountDeletion } from './accountDeletionService.js';
+import { logger } from '../utils/logger.js';
 
 export const registerUser = async (email: string, password: string, name: string) => {
   // Tìm user theo email
@@ -85,6 +87,11 @@ export const loginUser = async (email: string, password: string) => {
   
   const user = (users as any[])[0] as User;
 
+  // Check if account is deleted
+  if (user.is_deleted) {
+    throw new AppError(ErrorKey.AuthInvalidCredentials, 'Account has been deleted');
+  }
+
   // Chỉ block nếu user HOÀN TOÀN không có password (chỉ có Google)
   // Nếu user có password_hash, cho phép login bằng email/password
   // (ngay cả khi đã link Google account)
@@ -106,6 +113,12 @@ export const loginUser = async (email: string, password: string) => {
   const isValidPassword = await comparePassword(password, user.password_hash);
   if (!isValidPassword) {
     throw new AppError(ErrorKey.AuthInvalidCredentials, getErrorMessage(ErrorKey.AuthInvalidCredentials));
+  }
+  
+  // Cancel deletion if user has pending deletion request
+  if (user.deletion_requested_at) {
+    await cancelAccountDeletion(user.id);
+    logger.info(`Account deletion cancelled for user ${user.id} due to login`);
   }
   
   const token = generateToken(user.id);

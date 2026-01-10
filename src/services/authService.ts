@@ -7,6 +7,7 @@ import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { cancelAccountDeletion } from './accountDeletionService.js';
 import { logger } from '../utils/logger.js';
+import { getActiveSubscriptionByUserId } from './subscriptionService.js';
 
 export const registerUser = async (email: string, password: string, name: string) => {
   // Tìm user theo email
@@ -128,7 +129,7 @@ export const loginUser = async (email: string, password: string) => {
 
 export const getUserProfile = async (userId: number) => {
   const [users] = await pool.execute(
-    'SELECT id, email, name, password_hash, google_id, apple_id FROM users WHERE id = ?',
+    'SELECT id, email, name, password_hash, google_id, apple_id, manual_plan_is_active, manual_plan_product_id, manual_plan_entitlement_id, manual_plan_status, manual_plan_expires_at FROM users WHERE id = ?',
     [userId]
   );
   
@@ -139,9 +140,53 @@ export const getUserProfile = async (userId: number) => {
   const user = (users as any[])[0] as User & {
     google_id?: string | null;
     apple_id?: string | null;
+    manual_plan_is_active?: boolean | null;
+    manual_plan_product_id?: string | null;
+    manual_plan_entitlement_id?: string | null;
+    manual_plan_status?: string | null;
+    manual_plan_expires_at?: Date | null;
   };
 
   const hasPassword = !!user.password_hash;
+
+  // Lấy subscription từ RevenueCat (nếu có)
+  const subscription = await getActiveSubscriptionByUserId(userId);
+
+  // Logic: Ưu tiên subscription từ RevenueCat, nếu không có thì dùng manual plan
+  let plan = null;
+  
+  if (subscription) {
+    // Có subscription từ RevenueCat → dùng subscription
+    plan = {
+      isActive: subscription.is_active,
+      productId: subscription.product_id,
+      entitlementId: subscription.entitlement_id,
+      status: subscription.subscription_status,
+      expiresAt: subscription.expires_at?.getTime() || null,
+      platform: subscription.platform,
+      source: 'revenuecat'
+    };
+  } else if (user.manual_plan_is_active) {
+    // Không có subscription nhưng có manual plan → dùng manual plan
+    plan = {
+      isActive: user.manual_plan_is_active,
+      productId: user.manual_plan_product_id,
+      entitlementId: user.manual_plan_entitlement_id || 'premium',
+      status: user.manual_plan_status || 'active',
+      expiresAt: user.manual_plan_expires_at?.getTime() || null,
+      source: 'manual'
+    };
+  } else {
+    // Không có cả 2 → free plan
+    plan = {
+      isActive: false,
+      productId: null,
+      entitlementId: null,
+      status: null,
+      expiresAt: null,
+      source: 'free'
+    };
+  }
 
   return {
     id: user.id,
@@ -155,10 +200,25 @@ export const getUserProfile = async (userId: number) => {
       google: !!user.google_id,
       apple: !!(user as any).apple_id,
     },
+    plan,
   };
 };
 
-export const updateUserProfile = async (userId: number, updateData: { name?: string; currentPassword?: string; newPassword?: string }) => {
+export const updateUserProfile = async (
+  userId: number, 
+  updateData: { 
+    name?: string; 
+    currentPassword?: string; 
+    newPassword?: string;
+    plan?: {
+      isActive?: boolean;
+      productId?: string;
+      entitlementId?: string;
+      status?: string;
+      expiresAt?: number;
+    };
+  }
+) => {
   const [users] = await pool.execute(
     'SELECT * FROM users WHERE id = ?',
     [userId]
@@ -195,6 +255,30 @@ export const updateUserProfile = async (userId: number, updateData: { name?: str
     updateFields.push('password_hash = ?');
     values.push(newPasswordHash);
   }
+
+  // Update plan (luôn cho phép)
+  if (updateData.plan) {
+    if (updateData.plan.isActive !== undefined) {
+      updateFields.push('manual_plan_is_active = ?');
+      values.push(updateData.plan.isActive);
+    }
+    if (updateData.plan.productId !== undefined) {
+      updateFields.push('manual_plan_product_id = ?');
+      values.push(updateData.plan.productId);
+    }
+    if (updateData.plan.entitlementId !== undefined) {
+      updateFields.push('manual_plan_entitlement_id = ?');
+      values.push(updateData.plan.entitlementId);
+    }
+    if (updateData.plan.status !== undefined) {
+      updateFields.push('manual_plan_status = ?');
+      values.push(updateData.plan.status);
+    }
+    if (updateData.plan.expiresAt !== undefined) {
+      updateFields.push('manual_plan_expires_at = ?');
+      values.push(updateData.plan.expiresAt ? new Date(updateData.plan.expiresAt) : null);
+    }
+  }
   
   if (updateFields.length > 0) {
     values.push(userId);
@@ -204,14 +288,8 @@ export const updateUserProfile = async (userId: number, updateData: { name?: str
     );
   }
   
-  // Return updated user profile
-  const [updatedUsers] = await pool.execute(
-    'SELECT id, email, name FROM users WHERE id = ?',
-    [userId]
-  );
-  
-  const updatedUser = (updatedUsers as any[])[0];
-  return { id: updatedUser.id, email: updatedUser.email, name: updatedUser.name };
+  // Return updated user profile (với plan)
+  return await getUserProfile(userId);
 };
 
 export const forgotPassword = async (email: string) => {

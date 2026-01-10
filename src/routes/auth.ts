@@ -24,7 +24,14 @@ const LoginRequest = z.object({
 const UpdateProfileRequest = z.object({
   name: z.string().min(1).optional(),
   currentPassword: z.string().optional(),
-  newPassword: z.string().min(6).optional()
+  newPassword: z.string().min(6).optional(),
+  plan: z.object({
+    isActive: z.boolean().optional(),
+    productId: z.string().optional(),
+    entitlementId: z.string().optional(),
+    status: z.enum(['active', 'expired', 'cancelled', 'billing_issue', 'paused']).optional(),
+    expiresAt: z.number().optional(),
+  }).optional(),
 }).refine((data) => {
   // If newPassword is provided, currentPassword is required
   if (data.newPassword && !data.currentPassword) {

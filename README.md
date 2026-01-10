@@ -28,6 +28,9 @@ Tạo file `.env`:
 # Bắt buộc
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 
+# Environment
+NODE_ENV=production  # Mặc định là production
+
 # Tùy chọn - API Configuration
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 DEEPSEEK_MODEL=deepseek/deepseek-v3.1-terminus
@@ -45,6 +48,10 @@ APP_DESCRIPTION=API thông minh để tạo todo từ prompt sử dụng DeepSee
 HOST=0.0.0.0
 PORT=8000
 ```
+
+**Lưu ý về Manual Plan**:
+- Manual plan luôn được phép update qua `PUT /auth/profile`
+- Không cần config gì thêm, có thể set plan bất cứ lúc nào
 
 ## 📋 API Endpoints
 

@@ -23,7 +23,6 @@ const UpdateTodoRequest = z.object({
   labels: z.any().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   message: z.string().optional(),
-  confidence: z.number().optional(),
   created_by: z.string().optional(),
   progress: z.enum(['todo', 'inprogress', 'done']).optional()
 });
@@ -136,7 +135,6 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
       labels: aiResult.labels || undefined,
       priority: aiResult.priority || 'medium',
       message: aiResult.message,
-      confidence: aiResult.confidence,
       created_by: aiResult.createdBy || undefined,
       progress: 'todo' as const
     };
@@ -147,7 +145,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
   }
 });
 
-// Manual create todo (created_by='User', confidence=1)
+// Manual create todo (created_by='User')
 router.post('/create-manual', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
@@ -186,7 +184,6 @@ router.post('/create-manual', authenticateToken, async (req: Request, res: Respo
       labels: (payload as any).labels || undefined,
       priority: payload.priority || 'medium',
       message: payload.message,
-      confidence: 1,
       created_by: 'User',
       progress: 'todo'
     });
@@ -237,7 +234,6 @@ router.post('/batch_import', authenticateToken, async (req: Request, res: Respon
       labels: (todo as any).labels || undefined,
       priority: todo.priority || 'medium',
       message: todo.message,
-      confidence: 1,
       created_by: 'User',
       progress: 'todo' as const
     }));

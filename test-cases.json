@@ -1,0 +1,925 @@
+{
+    "currentTime": "2025-11-24T17:00:00.000",
+    "testCases": [
+        {
+            "input": "bảy giờ tối nay đi chơi",
+            "expectedTitle": "đi chơi",
+            "expectedDate": "2025-11-24T19:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "cuối tháng 3 viết đơn xin nghỉ việc",
+            "expectedTitle": "viết đơn xin nghỉ việc",
+            "expectedDate": "2026-03-31T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "30p nữa đi ngủ",
+            "expectedTitle": "đi ngủ",
+            "expectedDate": "2025-11-24T17:30:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "cuối tháng đi chơi",
+            "expectedTitle": "đi chơi",
+            "expectedDate": "2025-11-30T09:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "cuối tuần đi chơi",
+            "expectedTitle": "đi chơi",
+            "expectedDate": "2025-11-30T09:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "Mai đi làm lúc 9h sáng",
+            "expectedTitle": "đi làm",
+            "expectedDate": "2025-11-25T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "tối chủ nhật tuần sau đi chơi cầu lông",
+            "expectedTitle": "đi chơi cầu lông",
+            "expectedDate": "2025-12-07T21:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "tối thứ 7 tuần sau đi chơi cầu lông",
+            "expectedTitle": "đi chơi cầu lông",
+            "expectedDate": "2025-12-06T21:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "thứ 3 tuần sau đi chơi cầu lông",
+            "expectedTitle": "đi chơi cầu lông",
+            "expectedDate": "2025-12-02T09:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "thứ 2 tuần sau nữa họp nhóm",
+            "expectedTitle": "họp nhóm",
+            "expectedDate": "2025-12-08T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "sáng mai đi siêu thị",
+            "expectedTitle": "đi siêu thị",
+            "expectedDate": "2025-11-25T09:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "chiều mai mua cà phê",
+            "expectedTitle": "mua cà phê",
+            "expectedDate": "2025-11-25T15:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "cuối tuần này mua cà phê",
+            "expectedTitle": "mua cà phê",
+            "expectedDate": "2025-11-30T09:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "cuối tuần sau mua cà phê",
+            "expectedTitle": "mua cà phê",
+            "expectedDate": "2025-12-07T09:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "đầu tuần sau họp nhóm",
+            "expectedTitle": "họp nhóm",
+            "expectedDate": "2025-12-01T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "đầu tháng sau đi du lịch",
+            "expectedTitle": "đi du lịch",
+            "expectedDate": "2025-12-01T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "cuối tháng này thanh toán hóa đơn",
+            "expectedTitle": "thanh toán hóa đơn",
+            "expectedDate": "2025-11-30T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "3 ngày nữa đi khám bệnh",
+            "expectedTitle": "đi khám bệnh",
+            "expectedDate": "2025-11-27T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "10 ngày nữa đi du lịch",
+            "expectedTitle": "đi du lịch",
+            "expectedDate": "2025-12-04T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "tối ngày lễ giáng sinh đi chơi gắp thú",
+            "expectedTitle": "đi chơi gắp thú",
+            "expectedDate": "2025-12-25T21:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "lúc 14h chiều mai họp",
+            "expectedTitle": "họp",
+            "expectedDate": "2025-11-25T14:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "vào 8h sáng thứ 5 tuần sau đi làm",
+            "expectedTitle": "đi làm",
+            "expectedDate": "2025-12-04T08:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "thứ 6 tuần sau nữa đi chơi",
+            "expectedTitle": "đi chơi",
+            "expectedDate": "2025-12-12T09:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "chủ nhật tuần sau đi nhà thờ",
+            "expectedTitle": "đi nhà thờ",
+            "expectedDate": "2025-12-07T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "đầu năm sau khởi động dự án mới",
+            "expectedTitle": "khởi động dự án mới",
+            "expectedDate": "2026-01-01T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "tối nay đi ăn lẩu",
+            "expectedTitle": "đi ăn lẩu",
+            "expectedDate": "2025-11-24T21:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "chiều nay họp lúc 18h30",
+            "expectedTitle": "họp",
+            "expectedDate": "2025-11-24T18:30:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "3 giờ nữa gọi điện cho mẹ",
+            "expectedTitle": "gọi điện cho mẹ",
+            "expectedDate": "2025-11-24T20:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "vào lúc 10h sáng ngày 5/12 họp nhóm",
+            "expectedTitle": "họp nhóm",
+            "expectedDate": "2025-12-05T10:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "2 tuần nữa đi tiệc cưới",
+            "expectedTitle": "đi tiệc cưới",
+            "expectedDate": "2025-12-08T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "tháng sau mua nhà",
+            "expectedTitle": "mua nhà",
+            "expectedDate": "2025-12-01T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "làm bài tập này vào thứ 4 tuần sau",
+            "expectedTitle": "làm bài tập",
+            "expectedDate": "2025-12-03T09:00:00.000",
+            "categories": [
+                "Học tập"
+            ]
+        },
+        {
+            "input": "ngày 1 tháng 1 năm 2026 đi du lịch",
+            "expectedTitle": "đi du lịch",
+            "expectedDate": "2026-01-01T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "22h ngày mai xem phim",
+            "expectedTitle": "xem phim",
+            "expectedDate": "2025-11-25T22:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "cuối năm đi du lịch",
+            "expectedTitle": "đi du lịch",
+            "expectedDate": "2025-12-31T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "hẹn hò với bạn gái lúc 7:30 tối thứ sáu",
+            "expectedTitle": "hẹn hò với bạn gái",
+            "expectedDate": "2025-11-28T19:30:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "toi thu bay tuan sau di choi cau long",
+            "expectedTitle": "di choi cau long",
+            "expectedDate": "2025-12-06T21:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "sang mai di sieu thi",
+            "expectedTitle": "di sieu thi",
+            "expectedDate": "2025-11-25T09:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "chieu mai mua ca phe",
+            "expectedTitle": "mua ca phe",
+            "expectedDate": "2025-11-25T15:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "thu 3 tuan sau di choi cau long",
+            "expectedTitle": "di choi cau long",
+            "expectedDate": "2025-12-02T09:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "chu nhat tuan sau nua di choi",
+            "expectedTitle": "di choi",
+            "expectedDate": "2025-12-14T09:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "dau tuan sau hop nhom",
+            "expectedTitle": "hop nhom",
+            "expectedDate": "2025-12-01T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "cuoi tuan nay mua ca phe",
+            "expectedTitle": "mua ca phe",
+            "expectedDate": "2025-11-30T09:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "dau thang sau di du lich",
+            "expectedTitle": "di du lich",
+            "expectedDate": "2025-12-01T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "cuoi thang nay thanh toan hoa don",
+            "expectedTitle": "thanh toan hoa don",
+            "expectedDate": "2025-11-30T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "giua tuan sau di xem phim",
+            "expectedTitle": "di xem phim",
+            "expectedDate": "2025-12-03T09:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "toi sẽ đi chơi với ny vào trưa mai",
+            "expectedTitle": "đi chơi với ny",
+            "expectedDate": "2025-11-25T12:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "toi mai se di choi",
+            "expectedTitle": "di choi",
+            "expectedDate": "2025-11-25T21:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "11h trưa mai sẽ đi ăn",
+            "expectedTitle": "đi ăn",
+            "expectedDate": "2025-11-25T11:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "mai đi chợ lúc 4 giờ chiều",
+            "expectedTitle": "đi chợ",
+            "expectedDate": "2025-11-25T16:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "tối thứ hai tuần sau đi đá banh",
+            "expectedTitle": "đi đá banh",
+            "expectedDate": "2025-12-01T21:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "thứ tư tuần sau nữa họp dự án lúc 10h",
+            "expectedTitle": "họp dự án",
+            "expectedDate": "2025-12-10T10:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "2 ngày trước giáng sinh đi mua quà",
+            "expectedTitle": "đi mua quà",
+            "expectedDate": "2025-12-23T09:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "vào lúc 16:45 ngày 1 tháng 1 năm sau nộp bài",
+            "expectedTitle": "nộp bài",
+            "expectedDate": "2026-01-01T16:45:00.000",
+            "categories": [
+                "Học tập"
+            ]
+        },
+        {
+            "input": "trưa mốt đi ăn với khách hàng",
+            "expectedTitle": "đi ăn với khách hàng",
+            "expectedDate": "2025-11-26T12:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "tối ngày mai thiền",
+            "expectedTitle": "thiền",
+            "expectedDate": "2025-11-25T21:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "4 tiếng nữa gọi điện cho sếp",
+            "expectedTitle": "gọi điện cho sếp",
+            "expectedDate": "2025-11-24T21:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "sang thu 5 tuan sau di tham gia hoi thao",
+            "expectedTitle": "tham gia hoi thao",
+            "expectedDate": "2025-12-04T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "ngay 15/12 nam nay to chuc tiec",
+            "expectedTitle": "to chuc tiec",
+            "expectedDate": "2025-12-15T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "trua nay an com chay",
+            "expectedTitle": "an com chay",
+            "expectedDate": "2025-11-24T12:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "7 ngày nữa đi tập gym",
+            "expectedTitle": "đi tập gym",
+            "expectedDate": "2025-12-01T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "thứ 7 tuần sau nộp báo cáo",
+            "expectedTitle": "nộp báo cáo",
+            "expectedDate": "2025-12-06T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "giữa tháng sau ký hợp đồng",
+            "expectedTitle": "ký hợp đồng",
+            "expectedDate": "2025-12-15T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "giữa năm sau ra mắt sản phẩm",
+            "expectedTitle": "ra mắt sản phẩm",
+            "expectedDate": "2026-07-01T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "lúc 19h tối mai học tiếng Nhật",
+            "expectedTitle": "học tiếng Nhật",
+            "expectedDate": "2025-11-25T19:00:00.000",
+            "categories": [
+                "Học tập"
+            ]
+        },
+        {
+            "input": "chieu thu 6 tuan sau di xem ca nhac",
+            "expectedTitle": "di xem ca nhac",
+            "expectedDate": "2025-12-05T15:00:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "24 giờ nữa gọi cho khách hàng",
+            "expectedTitle": "gọi cho khách hàng",
+            "expectedDate": "2025-11-25T17:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "sáng ngày 10 tháng 12 đi khám sức khỏe",
+            "expectedTitle": "đi khám sức khỏe",
+            "expectedDate": "2025-12-10T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "tối giao thừa đi chùa",
+            "expectedTitle": "đi chùa",
+            "expectedDate": "2025-12-31T21:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "thứ 4 tuần sau đi chợ",
+            "expectedTitle": "đi chợ",
+            "expectedDate": "2025-12-03T09:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "15 phút nữa nhắc uống thuốc",
+            "expectedTitle": "nhắc uống thuốc",
+            "expectedDate": "2025-11-24T17:15:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "nửa tiếng nữa đi chạy bộ",
+            "expectedTitle": "đi chạy bộ",
+            "expectedDate": "2025-11-24T17:30:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "sáng ngày mốt đi phỏng vấn",
+            "expectedTitle": "đi phỏng vấn",
+            "expectedDate": "2025-11-26T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "toi mot di nhau",
+            "expectedTitle": "di nhau",
+            "expectedDate": "2025-11-26T21:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "10:45 sáng mai họp daily",
+            "expectedTitle": "họp daily",
+            "expectedDate": "2025-11-25T10:45:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "20h30 tối nay xem bóng đá",
+            "expectedTitle": "xem bóng đá",
+            "expectedDate": "2025-11-24T20:30:00.000",
+            "categories": [
+                "Giải trí"
+            ]
+        },
+        {
+            "input": "valentine năm sau mua quà cho vợ",
+            "expectedTitle": "mua quà cho vợ",
+            "expectedDate": "2026-02-14T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "ngày 20/11 năm sau về thăm trường cũ",
+            "expectedTitle": "về thăm trường cũ",
+            "expectedDate": "2026-11-20T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "trua ngay mai an bun cha",
+            "expectedTitle": "an bun cha",
+            "expectedDate": "2025-11-25T12:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "5h sáng mai đi săn mây",
+            "expectedTitle": "đi săn mây",
+            "expectedDate": "2025-11-25T05:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "0h đêm nay săn sale shopee",
+            "expectedTitle": "săn sale shopee",
+            "expectedDate": "2025-11-25T00:00:00.000",
+            "categories": [
+                "Mua sắm"
+            ]
+        },
+        {
+            "input": "9h rưỡi sáng mai đi cắt tóc",
+            "expectedTitle": "đi cắt tóc",
+            "expectedDate": "2025-11-25T09:30:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "cuối tháng 12 tổng kết năm",
+            "expectedTitle": "tổng kết năm",
+            "expectedDate": "2025-12-31T09:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "ngày kia đi đám giỗ",
+            "expectedTitle": "đi đám giỗ",
+            "expectedDate": "2025-11-26T09:00:00.000",
+            "categories": [
+                "Gia đình"
+            ]
+        },
+        {
+            "input": "họp phụ huynh ngày 15/01",
+            "expectedTitle": "họp phụ huynh",
+            "expectedDate": "2026-01-15T09:00:00.000",
+            "categories": [
+                "Gia đình"
+            ]
+        },
+        {
+            "input": "48 tiếng nữa check server",
+            "expectedTitle": "check server",
+            "expectedDate": "2025-11-26T17:00:00.000",
+            "categories": [
+                "Công việc"
+            ]
+        },
+        {
+            "input": "sang chu nhat tuan toi ve que",
+            "expectedTitle": "ve que",
+            "expectedDate": "2025-12-07T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "1 tieng nua di tam",
+            "expectedTitle": "di tam",
+            "expectedDate": "2025-11-24T18:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "chiều 30 tết về nhà",
+            "expectedTitle": "về nhà",
+            "expectedDate": "2026-02-16T15:00:00.000",
+            "categories": [
+                "Gia đình"
+            ]
+        },
+        {
+            "input": "8h tối ngày 1 tháng sau trả tiền nhà",
+            "expectedTitle": "trả tiền nhà",
+            "expectedDate": "2025-12-01T20:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "đi lễ đêm giáng sinh",
+            "expectedTitle": "đi lễ giáng sinh",
+            "expectedDate": "2025-12-24T23:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "ăn tối ngày noel",
+            "expectedTitle": "ăn tối",
+            "expectedDate": "2025-12-25T21:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "đi xem pháo hoa tết dương lịch",
+            "expectedTitle": "đi xem pháo hoa tết dương lịch",
+            "expectedDate": "2026-01-01T00:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "cúng ông công ông táo",
+            "expectedTitle": "cúng ông công ông táo",
+            "expectedDate": "2026-02-10T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "mua sô cô la tặng valentine",
+            "expectedTitle": "mua sô cô la tặng valentine",
+            "expectedDate": "2026-02-14T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "chúc tết ông bà mùng 1 tết",
+            "expectedTitle": "chúc tết ông bà",
+            "expectedDate": "2026-02-17T09:00:00.000",
+            "categories": [
+                "Gia đình"
+            ]
+        },
+        {
+            "input": "đi chùa mùng 3 tết",
+            "expectedTitle": "đi chùa",
+            "expectedDate": "2026-02-19T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "mua hoa tặng mẹ 8/3",
+            "expectedTitle": "mua hoa tặng mẹ",
+            "expectedDate": "2026-03-08T09:00:00.000",
+            "categories": [
+                "Gia đình"
+            ]
+        },
+        {
+            "input": "dâng hương giỗ tổ hùng vương",
+            "expectedTitle": "dâng hương giỗ tổ hùng vương",
+            "expectedDate": "2026-04-26T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "đi du lịch dịp lễ 30/4",
+            "expectedTitle": "đi du lịch dịp lễ",
+            "expectedDate": "2026-04-30T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "về quê ngày quốc tế lao động",
+            "expectedTitle": "về quê",
+            "expectedDate": "2026-05-01T09:00:00.000",
+            "categories": [
+                "Gia đình"
+            ]
+        },
+        {
+            "input": "dẫn bé đi chơi quốc tế thiếu nhi",
+            "expectedTitle": "dẫn bé đi chơi quốc tế thiếu nhi",
+            "expectedDate": "2026-06-01T09:00:00.000",
+            "categories": [
+                "Gia đình"
+            ]
+        },
+        {
+            "input": "tưởng niệm ngày thương binh liệt sĩ",
+            "expectedTitle": "tưởng niệm",
+            "expectedDate": "2026-07-27T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "treo cờ ngày quốc khánh",
+            "expectedTitle": "treo cờ",
+            "expectedDate": "2026-09-02T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "phá cỗ trung thu",
+            "expectedTitle": "phá cỗ trung thu",
+            "expectedDate": "2026-09-25T21:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "tặng quà 20/10 cho bạn gái",
+            "expectedTitle": "tặng quà cho bạn gái",
+            "expectedDate": "2026-10-20T09:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "hóa trang halloween",
+            "expectedTitle": "hóa trang halloween",
+            "expectedDate": "2026-10-31T19:00:00.000",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "ăn chay ngày rằm tháng này",
+            "expectedTitle": "ăn chay",
+            "expectedDate": "2025-12-04T09:00:00.000",
+            "note": "Rằm tháng 10 Âm (15/10/2025 Âm) = 04/12/2025 Dương",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "đi lễ mùng 1 tháng sau âm lịch",
+            "expectedTitle": "đi lễ",
+            "expectedDate": "2025-12-20T09:00:00.000",
+            "note": "Mùng 1 tháng 11 Âm (01/11/2025 Âm) = 20/12/2025 Dương",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "cúng rằm tháng chạp",
+            "expectedTitle": "cúng rằm tháng chạp",
+            "expectedDate": "2026-02-02T09:00:00.000",
+            "note": "15/12/2025 Âm = 02/02/2026 Dương",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "thả cá chép tiễn ông táo về trời",
+            "expectedTitle": "thả cá chép về trời",
+            "expectedDate": "2026-02-10T09:00:00.000",
+            "note": "23/12/2025 Âm = 10/02/2026 Dương",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "cúng tất niên chiều 30 tết",
+            "expectedTitle": "cúng tất niên",
+            "expectedDate": "2026-02-16T15:00:00.000",
+            "note": "Ngày cuối cùng năm Âm lịch 2025 là 29/12 Âm = 16/02/2026 Dương",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "đi hái lộc giao thừa",
+            "expectedTitle": "đi hái lộc",
+            "expectedDate": "2026-02-17T00:00:00.000",
+            "note": "Giao thừa chuyển sang mùng 1 Tết Bính Ngọ = 17/02/2026 Dương",
+            "categories": [
+                "Cá nhân"
+            ]
+        },
+        {
+            "input": "mua vàng ngày vía thần tài",
+            "expectedTitle": "mua vàng",
+            "expectedDate": "2026-02-26T09:00:00.000",
+            "note": "Mùng 10 tháng Giêng (10/01/2026 Âm) = 26/02/2026 Dương",
+            "categories": [
+                "Mua sắm"
+            ]
+        }
+    ]
+}
+

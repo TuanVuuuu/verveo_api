@@ -27,12 +27,17 @@ if ! command -v flutter >/dev/null 2>&1; then
   echo "❌ Flutter not found."
   echo "👉 Installing Flutter $FLUTTER_VERSION_REQUIRED..."
   sudo mkdir -p "$FLUTTER_INSTALL_DIR"
-  sudo chown -R "$USER":"$USER" "$FLUTTER_INSTALL_DIR"
   wget -qO /tmp/flutter.tar.xz "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION_REQUIRED}-stable.tar.xz"
   tar -xJf /tmp/flutter.tar.xz -C "$FLUTTER_INSTALL_DIR" --strip-components=1
+  git config --global --add safe.directory "$FLUTTER_INSTALL_DIR" || true
+  export FLUTTER_ROOT="$FLUTTER_INSTALL_DIR"
   export PATH="$FLUTTER_INSTALL_DIR/bin:$PATH"
   flutter --disable-analytics || true
 fi
+
+git config --global --add safe.directory "$FLUTTER_INSTALL_DIR" || true
+export FLUTTER_ROOT="$FLUTTER_INSTALL_DIR"
+export PATH="$FLUTTER_INSTALL_DIR/bin:$PATH"
 
 if ! flutter --version | grep -q "$FLUTTER_VERSION_REQUIRED"; then
   echo "❌ Flutter version mismatch. Required: $FLUTTER_VERSION_REQUIRED"

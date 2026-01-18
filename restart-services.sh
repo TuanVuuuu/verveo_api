@@ -21,7 +21,14 @@ pkill -f "dart run bin/server.dart" || true
 # Start Dart service
 cd "$DART_DIR"
 if ! command -v dart >/dev/null 2>&1; then
-  echo "❌ Dart SDK not found. Please install Dart first."
+  echo "❌ Dart SDK not found."
+  echo "👉 Install (Ubuntu):"
+  echo "   sudo apt-get update"
+  echo "   sudo apt-get install -y apt-transport-https"
+  echo "   wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/dart.gpg"
+  echo "   echo 'deb [signed-by=/usr/share/keyrings/dart.gpg arch=amd64] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | sudo tee /etc/apt/sources.list.d/dart_stable.list"
+  echo "   sudo apt-get update"
+  echo "   sudo apt-get install -y dart"
   exit 1
 fi
 

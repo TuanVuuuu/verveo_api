@@ -20,18 +20,26 @@ pkill -f "dart run bin/server.dart" || true
 
 # Start Dart service
 cd "$DART_DIR"
-if ! command -v dart >/dev/null 2>&1; then
-  echo "❌ Dart SDK not found."
-  echo "👉 Installing Dart SDK (Ubuntu)..."
-  sudo apt-get update
-  sudo apt-get install -y apt-transport-https
-  wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/dart.gpg
-  echo 'deb [signed-by=/usr/share/keyrings/dart.gpg arch=amd64] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | sudo tee /etc/apt/sources.list.d/dart_stable.list
-  sudo apt-get update
-  sudo apt-get install -y dart
+FLUTTER_VERSION_REQUIRED="3.35.2"
+FLUTTER_INSTALL_DIR="/opt/flutter-$FLUTTER_VERSION_REQUIRED"
+
+if ! command -v flutter >/dev/null 2>&1; then
+  echo "❌ Flutter not found."
+  echo "👉 Installing Flutter $FLUTTER_VERSION_REQUIRED..."
+  sudo mkdir -p "$FLUTTER_INSTALL_DIR"
+  sudo chown -R "$USER":"$USER" "$FLUTTER_INSTALL_DIR"
+  wget -qO /tmp/flutter.tar.xz "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION_REQUIRED}-stable.tar.xz"
+  tar -xJf /tmp/flutter.tar.xz -C "$FLUTTER_INSTALL_DIR" --strip-components=1
+  export PATH="$FLUTTER_INSTALL_DIR/bin:$PATH"
+  flutter --disable-analytics || true
 fi
 
-dart pub get
+if ! flutter --version | grep -q "$FLUTTER_VERSION_REQUIRED"; then
+  echo "❌ Flutter version mismatch. Required: $FLUTTER_VERSION_REQUIRED"
+  exit 1
+fi
+
+flutter pub get
 nohup PORT=8081 dart run bin/server.dart > "$LOG_DIR/dart-service.log" 2>&1 &
 if systemctl list-unit-files --type=service | grep -q "^dart_time_service.service"; then
   sudo systemctl start dart_time_service

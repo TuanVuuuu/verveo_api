@@ -141,8 +141,24 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
     };
 
     logger.info('POST /todos response:', JSON.stringify(todoResponse, null, 2));
-    res.json(todoResponse);
+    
+    try {
+      JSON.stringify(todoResponse);
+      logger.info('POST /todos response is serializable');
+    } catch (serializeError) {
+      logger.error('POST /todos response serialization error:', serializeError);
+      return next(new AppError(ErrorKey.Internal, 'Response serialization failed'));
+    }
+    
+    try {
+      res.json(todoResponse);
+      logger.info('POST /todos response sent successfully');
+    } catch (sendError) {
+      logger.error('POST /todos failed to send response:', sendError);
+      return next(new AppError(ErrorKey.Internal, 'Failed to send response'));
+    }
   } catch (err) {
+    logger.error('POST /todos error:', err);
     next(err);
   }
 });

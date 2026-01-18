@@ -37,19 +37,26 @@ sleep 2
 cd "$DART_DIR"
 FLUTTER_VERSION_REQUIRED="3.35.2"
 FLUTTER_INSTALL_DIR="/opt/flutter-$FLUTTER_VERSION_REQUIRED"
+FLUTTER_BIN="$FLUTTER_INSTALL_DIR/bin/flutter"
 
-if ! command -v flutter >/dev/null 2>&1; then
-  echo "❌ Flutter not found."
+# Set PATH first (even if Flutter already exists)
+export FLUTTER_ROOT="$FLUTTER_INSTALL_DIR"
+export PATH="$FLUTTER_INSTALL_DIR/bin:$PATH"
+
+# Check if Flutter binary exists (check file directly, not command -v)
+if [ ! -f "$FLUTTER_BIN" ]; then
+  echo "❌ Flutter not found at $FLUTTER_BIN"
   echo "👉 Installing Flutter $FLUTTER_VERSION_REQUIRED..."
   sudo mkdir -p "$FLUTTER_INSTALL_DIR"
   wget -qO /tmp/flutter.tar.xz "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION_REQUIRED}-stable.tar.xz"
   tar -xJf /tmp/flutter.tar.xz -C "$FLUTTER_INSTALL_DIR" --strip-components=1
   git config --global --add safe.directory "$FLUTTER_INSTALL_DIR" || true
-  export FLUTTER_ROOT="$FLUTTER_INSTALL_DIR"
-  export PATH="$FLUTTER_INSTALL_DIR/bin:$PATH"
-  flutter --disable-analytics || true
+  "$FLUTTER_BIN" --disable-analytics || true
+else
+  echo "✅ Flutter found at $FLUTTER_BIN"
 fi
 
+# Always configure git safe directory and ensure PATH is set
 git config --global --add safe.directory "$FLUTTER_INSTALL_DIR" || true
 export FLUTTER_ROOT="$FLUTTER_INSTALL_DIR"
 export PATH="$FLUTTER_INSTALL_DIR/bin:$PATH"

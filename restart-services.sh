@@ -3,7 +3,7 @@
 set -e
 
 API_DIR="/Users/nguyentuanvu/dev/BE/test_ai/version_2.0/projects/api_verveo"
-DART_DIR="/Users/nguyentuanvu/dev/BE/test_ai/version_2.0/projects/dart_time_service"
+DART_DIR="/Users/nguyentuanvu/dev/BE/test_ai/version_2.0/projects/api_verveo/dart_time_service"
 LOG_DIR="$API_DIR/logs"
 
 MODE=${1:-build} # build | dev

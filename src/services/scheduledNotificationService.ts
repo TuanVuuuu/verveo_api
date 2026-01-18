@@ -10,6 +10,7 @@ interface Todo {
   user_id: number;
   title: string;
   description?: string;
+  message?: string;
   start_time?: number;
   due?: number;
 }
@@ -25,7 +26,7 @@ class ScheduledNotificationService {
       logger.info(`⏰ Checking for todos between ${now.toISOString()} and ${oneMinuteLater.toISOString()}`);
       
       const [rows] = await db.query<RowDataPacket[]>(
-        `SELECT t.id, t.user_id, t.title, t.description, t.start_time, t.due
+        `SELECT t.id, t.user_id, t.title, t.description, t.message, t.start_time, t.due
          FROM todos t
          WHERE t.start_time IS NOT NULL
            AND t.start_time BETWEEN ? AND ?
@@ -75,13 +76,14 @@ class ScheduledNotificationService {
       const queue = getQueue();
       
       const notification = {
-        title: '⏰ Đến giờ làm việc!',
-        body: todo.title,
+        title: todo.title || '⏰ Đến giờ làm việc!',
+        body: todo.message || todo.description || 'Đến giờ làm việc!',
         data: {
           type: 'todo_start_reminder',
           todoId: todo.id.toString(),
           title: todo.title,
           description: todo.description || '',
+          message: todo.message || '',
           startTime: todo.start_time?.toString() || '',
           dueTime: todo.due?.toString() || '',
           timestamp: Date.now().toString(),
@@ -138,6 +140,9 @@ class ScheduledNotificationService {
 
   private async logNotification(todo: Todo): Promise<void> {
     try {
+      const notificationTitle = todo.title || '⏰ Đến giờ làm việc!';
+      const notificationBody = todo.message || todo.title || todo.description || 'Đến giờ làm việc!';
+      
       await db.query<ResultSetHeader>(
         `INSERT INTO notification_logs 
          (user_id, todo_id, notification_type, notification_title, notification_body, status)
@@ -146,8 +151,8 @@ class ScheduledNotificationService {
           todo.user_id,
           todo.id,
           'start_reminder',
-          '⏰ Đến giờ làm việc!',
-          todo.title,
+          notificationTitle,
+          notificationBody,
           'sent'
         ]
       );
@@ -168,7 +173,7 @@ class ScheduledNotificationService {
       logger.info(`🚀 Checking for missed notifications (${new Date(windowStart).toISOString()} - ${new Date(now).toISOString()})`);
       
       const [rows] = await db.query<RowDataPacket[]>(
-        `SELECT t.id, t.user_id, t.title, t.description, t.start_time
+        `SELECT t.id, t.user_id, t.title, t.description, t.message, t.start_time
          FROM todos t
          WHERE t.start_time IS NOT NULL
            AND t.start_time BETWEEN ? AND ?
@@ -221,13 +226,14 @@ class ScheduledNotificationService {
         : 'không xác định';
 
       const notification = {
-        title: '⏰ Nhắc nhở (đã trễ)',
-        body: `${todo.title} - Bắt đầu lúc ${timeStr}`,
+        title: todo.title || '⏰ Nhắc nhở (đã trễ)',
+        body: todo.message || `${todo.title} - Bắt đầu lúc ${timeStr}`,
         data: {
           type: 'todo_start_reminder_late',
           todoId: todo.id.toString(),
           title: todo.title,
           description: todo.description || '',
+          message: todo.message || '',
           startTime: todo.start_time?.toString() || '',
           timestamp: Date.now().toString(),
           late: 'true',

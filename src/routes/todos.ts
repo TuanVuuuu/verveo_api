@@ -6,6 +6,7 @@ import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { AIService } from '../services/aiService.js';
 import { DateTime } from '../utils/datetime.js';
+import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 const aiService = new AIService();
@@ -139,6 +140,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
       progress: 'todo' as const
     };
 
+    logger.info('POST /todos response:', JSON.stringify(todoResponse, null, 2));
     res.json(todoResponse);
   } catch (err) {
     next(err);

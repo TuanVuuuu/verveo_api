@@ -2,8 +2,9 @@
 
 set -e
 
-API_DIR="/Users/nguyentuanvu/dev/BE/test_ai/version_2.0/projects/api_verveo"
-DART_DIR="/Users/nguyentuanvu/dev/BE/test_ai/version_2.0/projects/api_verveo/dart_time_service"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+API_DIR="$SCRIPT_DIR"
+DART_DIR="$SCRIPT_DIR/dart_time_service"
 LOG_DIR="$API_DIR/logs"
 
 MODE=${1:-build} # build | dev

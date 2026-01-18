@@ -9,8 +9,29 @@ DART_DIR="$SCRIPT_DIR/dart_time_service"
 MODE=${1:-build} # build | dev
 
 # Stop existing services (systemd only)
+# Disable auto-restart temporarily to prevent restart loop
+if systemctl list-unit-files --type=service | grep -q "^api_verveo.service"; then
+  sudo systemctl disable api_verveo --now || true
+fi
+if systemctl list-unit-files --type=service | grep -q "^dart_time_service.service"; then
+  sudo systemctl disable dart_time_service --now || true
+fi
 sudo systemctl stop api_verveo || true
 sudo systemctl stop dart_time_service || true
+
+# Kill any processes still holding ports (safety net)
+echo "🔍 Checking for processes holding ports..."
+if lsof -ti:8000 >/dev/null 2>&1; then
+  echo "⚠️  Killing process on port 8000..."
+  sudo lsof -ti:8000 | xargs -r sudo kill -9 || true
+fi
+if lsof -ti:8081 >/dev/null 2>&1; then
+  echo "⚠️  Killing process on port 8081..."
+  sudo lsof -ti:8081 | xargs -r sudo kill -9 || true
+fi
+
+# Wait for ports to be released
+sleep 2
 
 # Ensure Flutter 3.35.2 exists for Dart service
 cd "$DART_DIR"
@@ -47,9 +68,27 @@ if [ "$MODE" != "dev" ]; then
   npm run build
 fi
 
+# Verify ports are free before starting
+if lsof -ti:8000 >/dev/null 2>&1; then
+  echo "❌ Port 8000 still in use. Aborting."
+  exit 1
+fi
+if lsof -ti:8081 >/dev/null 2>&1; then
+  echo "⚠️  Port 8081 still in use, but continuing..."
+fi
+
 # Start systemd services
-sudo systemctl start dart_time_service || true
-sudo systemctl start api_verveo
+if systemctl list-unit-files --type=service | grep -q "^dart_time_service.service"; then
+  sudo systemctl enable dart_time_service || true
+  sudo systemctl start dart_time_service || true
+fi
+if systemctl list-unit-files --type=service | grep -q "^api_verveo.service"; then
+  sudo systemctl enable api_verveo
+  sudo systemctl start api_verveo
+else
+  echo "❌ api_verveo.service not found. Please create systemd service file."
+  exit 1
+fi
 
 echo "✅ Services started via systemd"
 echo "📄 Tailing logs: sudo journalctl -u api_verveo -f"

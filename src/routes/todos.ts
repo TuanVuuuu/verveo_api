@@ -127,12 +127,19 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
     }
     const aiResult = await aiService.generateTodoWithDeepseek(parse.data.prompt);
 
+    // Parse time string như UTC+7 (từ one_extract_task)
+    const parseUTC7Time = (timeString: string | null | undefined): number | null => {
+      if (!timeString) return null;
+      const date = DateTime.parseUTC7String(timeString);
+      return date ? date.getTime() : null;
+    };
+
     const todoResponse = {
       title: aiResult.title,
       description: aiResult.description,
-      start_time: aiResult.startTime ? DateTime.toTimestamp(new Date(aiResult.startTime)) : null,
-      end_time: aiResult.endTime ? DateTime.toTimestamp(new Date(aiResult.endTime)) : null,
-      due: aiResult.startTime ? DateTime.toTimestamp(new Date(aiResult.startTime)) : null,
+      start_time: parseUTC7Time(aiResult.startTime),
+      end_time: parseUTC7Time(aiResult.endTime),
+      due: parseUTC7Time(aiResult.startTime),
       labels: aiResult.labels || undefined,
       priority: aiResult.priority || 'medium',
       message: aiResult.message,

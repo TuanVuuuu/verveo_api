@@ -83,6 +83,29 @@ export class DateTime {
     if (!timestamp) return null;
     return new Date(timestamp);
   }
+
+  /**
+   * Parse string format "YYYY-MM-DD HH:mm:ss" as UTC+7 timezone
+   * String này đã là UTC+7, cần convert sang UTC để tạo Date object
+   */
+  static parseUTC7String(timeString: string): Date | null {
+    try {
+      const match = timeString.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+      if (!match) {
+        // Fallback: parse như ISO string
+        return new Date(timeString);
+      }
+
+      const [, year, month, day, hour, minute, second] = match.map(Number);
+      
+      // Tạo Date như UTC+7 (trừ 7 giờ để có UTC time)
+      const utcDate = new Date(Date.UTC(year, month - 1, day, hour - 7, minute, second));
+      
+      return utcDate;
+    } catch {
+      return null;
+    }
+  }
 }
 
 

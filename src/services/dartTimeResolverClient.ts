@@ -89,10 +89,35 @@ export class DartTimeResolverClient {
         extractedInfo: data.extractedInfo
       });
 
-      // Convert to our format (YYYY-MM-DD HH:mm:ss) - xử lý cả ISO và format YYYY-MM-DD HH:mm:ss
+      // Ưu tiên dùng timestamp từ Dart service (chính xác hơn, đã đúng timezone)
+      let startTime: string;
+      let endTime: string;
+
+      if (data.extractedInfo?.startTimeMs && data.extractedInfo?.endTimeMs) {
+        // Dùng timestamp từ Dart service (đã đúng timezone UTC+7)
+        const startDate = new Date(data.extractedInfo.startTimeMs);
+        const endDate = new Date(data.extractedInfo.endTimeMs);
+        startTime = this.formatDateTime(startDate);
+        endTime = this.formatDateTime(endDate);
+        
+        logger.info('[DartTimeResolver] ✅ Using timestamp from extractedInfo (more accurate)', {
+          startTimeMs: data.extractedInfo.startTimeMs,
+          endTimeMs: data.extractedInfo.endTimeMs,
+          startTime,
+          endTime,
+          startTimeISO: startDate.toISOString(),
+          endTimeISO: endDate.toISOString()
+        });
+      } else {
+        // Fallback: parse từ string (có thể có vấn đề timezone)
+        logger.warn('[DartTimeResolver] ⚠️ No timestamp in extractedInfo, using string parsing (may have timezone issues)');
+        startTime = this.convertToFormat(data.startTime);
+        endTime = this.convertToFormat(data.endTime);
+      }
+
       const result = {
-        startTime: this.convertToFormat(data.startTime),
-        endTime: this.convertToFormat(data.endTime),
+        startTime,
+        endTime,
       };
 
       logger.info('[DartTimeResolver] After conversion', {
@@ -199,6 +224,27 @@ export class DartTimeResolverClient {
       });
       throw error;
     }
+  }
+
+  /**
+   * Format Date object thành string YYYY-MM-DD HH:mm:ss (UTC+7)
+   * Timestamp từ Dart service đã là UTC, cần convert sang UTC+7 để format
+   */
+  private formatDateTime(date: Date): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    
+    // Convert từ UTC sang UTC+7 (thêm 7 giờ)
+    const utc7Date = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+    
+    // Lấy UTC components (sau khi đã +7 giờ)
+    const y = utc7Date.getUTCFullYear();
+    const m = pad(utc7Date.getUTCMonth() + 1);
+    const d = pad(utc7Date.getUTCDate());
+    const hh = pad(utc7Date.getUTCHours());
+    const mm = pad(utc7Date.getUTCMinutes());
+    const ss = pad(utc7Date.getUTCSeconds());
+    
+    return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
   }
 
   setEnabled(enabled: boolean): void {

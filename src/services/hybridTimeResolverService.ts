@@ -1,4 +1,5 @@
 import { DartTimeResolverClient, ResolvedTime } from './dartTimeResolverClient.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Time Resolver Service - Uses Dart service (one_extract_task) only
@@ -15,24 +16,45 @@ export class HybridTimeResolverService {
     durationHours = 2,
     now = new Date()
   ): Promise<ResolvedTime> {
+    logger.info('[HybridTimeResolver] Resolve called', {
+      timeHint,
+      durationHours,
+      now: now.toISOString(),
+      nowLocal: now.toString()
+    });
+
     const dartResult = await this.dartClient.resolve(timeHint, durationHours, now);
     
     if (dartResult) {
-      console.log('✅ Used Dart service for time resolution');
+      logger.info('[HybridTimeResolver] ✅ Used Dart service (one_extract_task) for time resolution', {
+        startTime: dartResult.startTime,
+        endTime: dartResult.endTime,
+        startTimeISO: new Date(dartResult.startTime).toISOString(),
+        endTimeISO: new Date(dartResult.endTime).toISOString()
+      });
       return dartResult;
     }
 
     // Return default time if Dart service fails
-    console.error('❌ Dart service failed');
+    logger.warn('[HybridTimeResolver] ❌ Dart service failed, using FALLBACK');
     const startTime = new Date(now);
     startTime.setHours(startTime.getHours() + 1);
     const endTime = new Date(startTime);
     endTime.setHours(endTime.getHours() + durationHours);
     
-    return {
+    const fallbackResult = {
       startTime: this.formatDateTime(startTime),
       endTime: this.formatDateTime(endTime),
     };
+
+    logger.warn('[HybridTimeResolver] Fallback time result', {
+      startTime: fallbackResult.startTime,
+      endTime: fallbackResult.endTime,
+      startTimeISO: startTime.toISOString(),
+      endTimeISO: endTime.toISOString()
+    });
+
+    return fallbackResult;
   }
 
   private formatDateTime(dt: Date): string {

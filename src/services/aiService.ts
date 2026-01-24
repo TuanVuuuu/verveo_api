@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { DateTime } from '../utils/datetime.js';
 import { HybridTimeResolverService } from './hybridTimeResolverService.js';
+import { logger } from '../utils/logger.js';
 
 export interface GenTodoIntent {
   title: string;
@@ -62,13 +63,42 @@ export class AIService {
   }
 
   async generateTodoWithDeepseek(prompt: string, now?: Date): Promise<GenTodoResponse> {
+    const currentTime = now || new Date();
+    
+    logger.info('[AIService] generateTodoWithDeepseek called', {
+      prompt,
+      now: currentTime.toISOString(),
+      nowLocal: currentTime.toString()
+    });
+
     // 1. DeepSeek AI: Generate title, message, priority, labels only
     const intent = await this.generateTodoIntent(prompt);
     
+    logger.info('[AIService] DeepSeek intent generated', {
+      title: intent.title,
+      labels: intent.labels,
+      priority: intent.priority
+    });
+    
     // 2. Dart service (one_extract_task): Extract time + full task info from original prompt
-    const resolvedTime = await this.timeResolver.resolve(prompt, 2, now);
+    logger.info('[AIService] Calling timeResolver.resolve (one_extract_task)', {
+      prompt,
+      durationHours: 2,
+      now: currentTime.toISOString()
+    });
+    
+    const resolvedTime = await this.timeResolver.resolve(prompt, 2, currentTime);
 
-    return {
+    logger.info('[AIService] TimeResolver returned', {
+      startTime: resolvedTime.startTime,
+      endTime: resolvedTime.endTime,
+      startTimeParsed: new Date(resolvedTime.startTime).toISOString(),
+      endTimeParsed: new Date(resolvedTime.endTime).toISOString(),
+      startTimeTimestamp: new Date(resolvedTime.startTime).getTime(),
+      endTimeTimestamp: new Date(resolvedTime.endTime).getTime()
+    });
+
+    const result = {
       title: intent.title,
       description: prompt, // Keep original prompt as description
       startTime: resolvedTime.startTime,
@@ -78,6 +108,14 @@ export class AIService {
       message: intent.message,
       createdBy: 'one_extract_task + DeepSeek'
     };
+
+    logger.info('[AIService] Final GenTodoResponse', {
+      ...result,
+      startTimeISO: new Date(result.startTime).toISOString(),
+      endTimeISO: new Date(result.endTime).toISOString()
+    });
+
+    return result;
   }
 
   private createLeanUserPrompt(prompt: string): string {

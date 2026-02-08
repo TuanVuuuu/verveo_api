@@ -19,7 +19,7 @@ export type ListTodosOptions = {
 
 export const getUserTodos = async (userId: number, opts: ListTodosOptions = {}): Promise<Todo[]> => {
   const page = Math.max(1, opts.page ?? 1);
-  const size = Math.min(100, Math.max(1, opts.size ?? 20));
+  const size = Math.max(1, opts.size ?? 20);
   const offset = (page - 1) * size;
   const sortClause = (opts.sort ?? 'start_time_asc') === 'start_time_desc' ? 'DESC' : 'ASC';
 

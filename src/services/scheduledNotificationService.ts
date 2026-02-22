@@ -21,19 +21,22 @@ class ScheduledNotificationService {
     
     try {
       const now = new Date();
-      const oneMinuteLater = new Date(Date.now() + 60000);
+      const startOfCurrentMinute = new Date(now);
+      startOfCurrentMinute.setSeconds(0, 0);
+      const startOfNextMinute = new Date(startOfCurrentMinute.getTime() + 60000);
       
-      logger.info(`⏰ Checking for todos between ${now.toISOString()} and ${oneMinuteLater.toISOString()}`);
+      logger.info(`⏰ Checking for todos between ${startOfCurrentMinute.toISOString()} and ${startOfNextMinute.toISOString()}`);
       
       const [rows] = await db.query<RowDataPacket[]>(
         `SELECT t.id, t.user_id, t.title, t.description, t.message, t.start_time, t.due
          FROM todos t
          WHERE t.start_time IS NOT NULL
-           AND t.start_time BETWEEN ? AND ?
+           AND t.start_time >= ? AND t.start_time < ?
            AND t.start_notification_sent = FALSE
+           AND (t.progress IS NULL OR t.progress != 'done')
          ORDER BY t.start_time ASC
          LIMIT 1000`,
-        [now, oneMinuteLater]
+        [startOfCurrentMinute, startOfNextMinute]
       );
       
       const todos = rows as unknown as Todo[];
@@ -178,6 +181,7 @@ class ScheduledNotificationService {
          WHERE t.start_time IS NOT NULL
            AND t.start_time BETWEEN ? AND ?
            AND t.start_notification_sent = FALSE
+           AND (t.progress IS NULL OR t.progress != 'done')
          ORDER BY t.start_time ASC
          LIMIT ?`,
         [windowStart, now, catchupLimit]

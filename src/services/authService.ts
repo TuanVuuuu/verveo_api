@@ -7,6 +7,7 @@ import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 import { cancelAccountDeletion } from './accountDeletionService.js';
 import { logger } from '../utils/logger.js';
+import { isManualPlanActiveForApi } from '../utils/subscriptionEligibility.js';
 import { getActiveSubscriptionByUserId } from './subscriptionService.js';
 
 export const registerUser = async (email: string, password: string, name: string) => {
@@ -166,8 +167,7 @@ export const getUserProfile = async (userId: number) => {
       platform: subscription.platform,
       source: 'revenuecat'
     };
-  } else if (user.manual_plan_is_active) {
-    // Không có subscription nhưng có manual plan → dùng manual plan
+  } else if (isManualPlanActiveForApi(user.manual_plan_is_active, user.manual_plan_expires_at)) {
     plan = {
       isActive: user.manual_plan_is_active,
       productId: user.manual_plan_product_id,

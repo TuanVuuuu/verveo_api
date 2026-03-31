@@ -47,10 +47,12 @@ export const getSubscriptionById = async (id: number): Promise<UserSubscription>
   return parseSubscription(subscriptions[0]);
 };
 
+/** Active cho API: còn cờ is_active và chưa quá expires_at (UTC). Tránh stale khi webhook EXPIRATION trễ/thiếu. */
 export const getActiveSubscriptionByUserId = async (userId: number): Promise<UserSubscription | null> => {
   const [rows] = await pool.execute(
     `SELECT * FROM user_subscriptions 
      WHERE user_id = ? AND is_active = true 
+     AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())
      ORDER BY expires_at DESC 
      LIMIT 1`,
     [userId]

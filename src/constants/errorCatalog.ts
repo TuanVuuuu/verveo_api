@@ -19,6 +19,9 @@ export enum ErrorKey {
   AuthResetTokenExpired = 'error.auth.reset_token_expired',
 
   TodoNotFound = 'error.todo.not_found',
+
+  ThemeNotFound = 'error.theme.not_found',
+  ThemeAlreadyExists = 'error.theme.already_exists',
 }
 
 export const ERROR_CATALOG: Record<ErrorKey, ErrorEntry> = {
@@ -77,6 +80,16 @@ export const ERROR_CATALOG: Record<ErrorKey, ErrorEntry> = {
   [ErrorKey.TodoNotFound]: {
     message: 'Công việc không tồn tại hoặc đã bị xoá.',
     http: 404,
+  },
+
+  // Themes
+  [ErrorKey.ThemeNotFound]: {
+    message: 'Theme không tồn tại hoặc đã bị xoá.',
+    http: 404,
+  },
+  [ErrorKey.ThemeAlreadyExists]: {
+    message: 'Theme đã tồn tại.',
+    http: 409,
   },
 };
 

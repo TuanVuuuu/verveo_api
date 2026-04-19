@@ -11,6 +11,7 @@ import todosRouter from './routes/todos.js';
 import fcmRouter from './routes/fcm.js';
 import notificationRouter from './routes/notification.js';
 import revenuecatRouter from './routes/revenuecat.js';
+import themesRouter from './routes/themes.js';
 import { isAppError, buildErrorPayload } from './utils/errors.js';
 import { ErrorKey } from './constants/errorCatalog.js';
 import { fcmService } from './services/fcmService.js';
@@ -92,6 +93,7 @@ app.use('/todos', todosRouter);
 app.use('/fcm', fcmRouter);
 app.use('/notifications', notificationRouter);
 app.use('/revenuecat', revenuecatRouter);
+app.use('/app/themes', themesRouter);
 
 // Error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

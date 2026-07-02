@@ -1,104 +1,72 @@
-import type { RowDataPacket, ResultSetHeader } from 'mysql2';
-import pool from '../config/database.js';
 import { AppError } from '../utils/errors.js';
 import { ErrorKey, getErrorMessage } from '../constants/errorCatalog.js';
 
-export type ThemePayload = Record<string, any>;
+export type ThemePayload = Record<string, unknown>;
 
-export type ThemeRow = {
-  id: string;
-  name: string;
-  calendar_category: string;
-  calendar_category_display: string;
-  payload_json: any;
-  is_deleted: 0 | 1;
-  created_at: Date;
-  updated_at: Date;
-};
-
-type CatalogMetaRow = {
-  id: number;
+type ThemeCatalog = {
   version: string;
+  themes: ThemePayload[];
 };
 
-const nowVersion = () => new Date().toISOString();
+let cache: { at: number; catalog: ThemeCatalog } | null = null;
+const CACHE_TTL_MS = 60_000;
 
-const getCatalogVersion = async (): Promise<string> => {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    'SELECT version FROM app_theme_catalog_meta WHERE id = 1 LIMIT 1'
-  );
-  const v = (rows as any[])[0]?.version as string | undefined;
-  return v || '1970-01-01T00:00:00.000Z';
+const getCatalogUrl = (): string => {
+  const url = process.env.THEME_CATALOG_JSON_URL?.trim();
+  if (!url) {
+    throw new AppError(ErrorKey.Internal, 'THEME_CATALOG_JSON_URL is not configured');
+  }
+  return url;
 };
 
-const bumpCatalogVersion = async (): Promise<string> => {
-  const v = nowVersion();
-  await pool.query<ResultSetHeader>(
-    'UPDATE app_theme_catalog_meta SET version = ? WHERE id = 1',
-    [v]
-  );
-  return v;
+const fetchCatalog = async (): Promise<ThemeCatalog> => {
+  const now = Date.now();
+  if (cache && now - cache.at < CACHE_TTL_MS) {
+    return cache.catalog;
+  }
+
+  const url = getCatalogUrl();
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { Accept: 'application/json' } });
+  } catch {
+    throw new AppError(ErrorKey.Internal, 'Failed to fetch theme catalog from remote JSON');
+  }
+
+  if (!res.ok) {
+    throw new AppError(ErrorKey.Internal, `Failed to fetch theme catalog (status ${res.status})`);
+  }
+
+  let raw: unknown;
+  try {
+    raw = await res.json();
+  } catch {
+    throw new AppError(ErrorKey.Internal, 'Theme catalog JSON is not valid');
+  }
+
+  if (!raw || typeof raw !== 'object' || !Array.isArray((raw as ThemeCatalog).themes)) {
+    throw new AppError(ErrorKey.Internal, 'Theme catalog JSON must contain themes[]');
+  }
+
+  const catalog: ThemeCatalog = {
+    version: String((raw as ThemeCatalog).version ?? new Date().toISOString()),
+    themes: (raw as ThemeCatalog).themes,
+  };
+
+  cache = { at: now, catalog };
+  return catalog;
 };
 
 export const listThemes = async (): Promise<{ version: string; themes: ThemePayload[] }> => {
-  const version = await getCatalogVersion();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    'SELECT payload_json FROM app_themes WHERE is_deleted = FALSE ORDER BY created_at DESC'
-  );
-  const themes = (rows as any[]).map((r) => r.payload_json);
-  return { version, themes };
+  const catalog = await fetchCatalog();
+  return { version: catalog.version, themes: catalog.themes };
 };
 
 export const getThemeById = async (id: string): Promise<{ version: string; theme: ThemePayload }> => {
-  const version = await getCatalogVersion();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    'SELECT payload_json FROM app_themes WHERE id = ? AND is_deleted = FALSE LIMIT 1',
-    [id]
-  );
-  if ((rows as any[]).length === 0) {
+  const catalog = await fetchCatalog();
+  const theme = catalog.themes.find((t) => String((t as { id?: string })?.id) === id);
+  if (!theme) {
     throw new AppError(ErrorKey.ThemeNotFound, getErrorMessage(ErrorKey.ThemeNotFound));
   }
-  return { version, theme: (rows as any[])[0].payload_json };
+  return { version: catalog.version, theme };
 };
-
-export const createTheme = async (theme: ThemePayload): Promise<{ version: string; theme: ThemePayload }> => {
-  const id = String(theme.id || '').trim();
-  if (!id) {
-    throw new AppError(ErrorKey.RequestInvalid, getErrorMessage(ErrorKey.RequestInvalid));
-  }
-
-  try {
-    await pool.query<ResultSetHeader>(
-      `INSERT INTO app_themes (id, name, calendar_category, calendar_category_display, payload_json)
-       VALUES (?, ?, ?, ?, ?)`,
-      [
-        theme.id,
-        theme.name,
-        theme.calendarCategory,
-        theme.calendarCategoryDisplay,
-        JSON.stringify(theme),
-      ]
-    );
-  } catch (err: any) {
-    if (err?.code === 'ER_DUP_ENTRY') {
-      throw new AppError(ErrorKey.ThemeAlreadyExists, getErrorMessage(ErrorKey.ThemeAlreadyExists));
-    }
-    throw err;
-  }
-
-  const version = await bumpCatalogVersion();
-  return { version, theme };
-};
-
-export const deleteTheme = async (id: string): Promise<{ version: string; deletedId: string }> => {
-  const [result] = await pool.query<ResultSetHeader>(
-    'UPDATE app_themes SET is_deleted = TRUE WHERE id = ? AND is_deleted = FALSE',
-    [id]
-  );
-  if ((result as ResultSetHeader).affectedRows === 0) {
-    throw new AppError(ErrorKey.ThemeNotFound, getErrorMessage(ErrorKey.ThemeNotFound));
-  }
-  const version = await bumpCatalogVersion();
-  return { version, deletedId: id };
-};
-
